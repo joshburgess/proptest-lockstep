@@ -347,12 +347,71 @@ struct OpRecord {
     var_id: usize,
 }
 
+/// Check whether two operations commute in a given model state.
+///
+/// Two operations commute if executing them in either order produces
+/// the same observable results (via their bridges) AND the same final
+/// model state. This is computed dynamically using the model — no
+/// annotations needed.
+///
+/// The check uses `check_bridge` to compare return values and
+/// `PartialEq` to compare final model states. For custom bridges with
+/// asymmetric observation functions, the bridge comparison passes two
+/// model results (not a model/SUT pair), which is correct for all
+/// built-in bridges but may be imprecise for custom asymmetric bridges.
+/// The model state comparison via `PartialEq` is sound — it catches
+/// all state differences, including "silent" mutations that don't
+/// appear in return values.
+///
+/// Used by the linearizability checker to prune the interleaving
+/// search space: commuting operations don't need to be reordered.
+fn operations_commute<M: LockstepModel>(
+    model: &M::ModelState,
+    env: &TypedEnv,
+    a: &OpRecord,
+    b: &OpRecord,
+) -> bool
+where
+    M::ModelState: PartialEq,
+{
+    // Order 1: a then b
+    let mut m1 = model.clone();
+    let mut e1 = env.clone();
+    let r_a1 = M::step_model(&mut m1, a.action.as_ref(), &e1);
+    a.action.store_model_var(a.var_id, &*r_a1, &mut e1);
+    let r_b1 = M::step_model(&mut m1, b.action.as_ref(), &e1);
+    b.action.store_model_var(b.var_id, &*r_b1, &mut e1);
+
+    // Order 2: b then a
+    let mut m2 = model.clone();
+    let mut e2 = env.clone();
+    let r_b2 = M::step_model(&mut m2, b.action.as_ref(), &e2);
+    b.action.store_model_var(b.var_id, &*r_b2, &mut e2);
+    let r_a2 = M::step_model(&mut m2, a.action.as_ref(), &e2);
+    a.action.store_model_var(a.var_id, &*r_a2, &mut e2);
+
+    // They commute if:
+    // 1. Both orderings produce bridge-equivalent results for each operation
+    let a_same = a.action.check_bridge(&*r_a1, &*r_a2).is_ok();
+    let b_same = b.action.check_bridge(&*r_b1, &*r_b2).is_ok();
+
+    // 2. The final model states are the same (catches "silent" state
+    //    mutations that don't appear in return values).
+    let state_same = m1 == m2;
+
+    a_same && b_same && state_same
+}
+
 /// Check whether a concurrent execution history is linearizable.
 ///
-/// Tries all order-preserving interleavings of the per-branch operation
-/// sequences. For each candidate interleaving, replays the actions
-/// against a fresh model copy (with its own `TypedEnv`) and checks
-/// whether all bridge comparisons pass.
+/// Uses dynamic partial-order reduction (DPOR): at each search node,
+/// detects commuting operations via the model and skips redundant
+/// interleavings. Two operations that commute in the current model
+/// state don't need to be reordered — the checker prunes the search
+/// tree using sleep sets.
+///
+/// Falls back to brute-force enumeration when operations don't commute
+/// or when commutativity can't be determined.
 ///
 /// Returns `Ok(())` if a valid linearization exists, or an error
 /// describing the failure.
@@ -362,7 +421,10 @@ fn check_linearizability<M: LockstepModel>(
     branches: &[Vec<OpRecord>],
     budget: usize,
     on_budget_exceeded: BudgetExceeded,
-) -> Result<(), String> {
+) -> Result<(), String>
+where
+    M::ModelState: PartialEq,
+{
     let branch_count = branches.len();
     if branch_count == 0 {
         return Ok(());
@@ -389,6 +451,7 @@ fn check_linearizability<M: LockstepModel>(
         &mut attempts,
         &mut best_match_depth,
         &mut best_trace,
+        &mut Vec::new(),
         &mut Vec::new(),
     );
 
@@ -435,7 +498,11 @@ fn check_linearizability_rec<M: LockstepModel>(
     best_depth: &mut usize,
     best_trace: &mut Vec<String>,
     current_trace: &mut Vec<String>,
-) -> bool {
+    sleep_set: &mut Vec<usize>,
+) -> bool
+where
+    M::ModelState: PartialEq,
+{
     // Base case: all operations consumed — this is a valid linearization
     if depth == total {
         *attempts += 1;
@@ -446,13 +513,20 @@ fn check_linearizability_rec<M: LockstepModel>(
         return false;
     }
 
-    // Try taking the next operation from each branch
-    for branch_id in 0..branches.len() {
-        let cursor = cursors[branch_id];
-        if cursor >= branches[branch_id].len() {
-            continue;
-        }
+    // Collect the branch IDs we'll actually try (excluding sleep set)
+    let candidates: Vec<usize> = (0..branches.len())
+        .filter(|&bid| {
+            let cursor = cursors[bid];
+            cursor < branches[bid].len() && !sleep_set.contains(&bid)
+        })
+        .collect();
 
+    // Track which branches we've successfully explored at this level,
+    // so we can build sleep sets for subsequent siblings.
+    let mut explored: Vec<usize> = Vec::new();
+
+    for &branch_id in &candidates {
+        let cursor = cursors[branch_id];
         let record = &branches[branch_id][cursor];
 
         // Clone model state and env for this attempt
@@ -482,6 +556,37 @@ fn check_linearizability_rec<M: LockstepModel>(
 
             cursors[branch_id] += 1;
 
+            // Build child sleep set:
+            // 1. Inherit parent sleep set entries that still commute
+            //    with the operation we just chose
+            // 2. Add branches explored at this level whose head
+            //    operations commute with the one we just chose
+            let mut child_sleep: Vec<usize> = Vec::new();
+
+            // Inherit from parent
+            for &bid in sleep_set.iter() {
+                let c = cursors[bid];
+                if c < branches[bid].len() {
+                    if operations_commute::<M>(model, env, record, &branches[bid][c]) {
+                        child_sleep.push(bid);
+                    }
+                }
+            }
+
+            // Add from explored siblings
+            for &prev_bid in &explored {
+                if child_sleep.contains(&prev_bid) {
+                    continue;
+                }
+                let prev_cursor = cursors[prev_bid];
+                if prev_cursor < branches[prev_bid].len() {
+                    let prev_record = &branches[prev_bid][prev_cursor];
+                    if operations_commute::<M>(model, env, record, prev_record) {
+                        child_sleep.push(prev_bid);
+                    }
+                }
+            }
+
             if check_linearizability_rec::<M>(
                 &model_clone,
                 &env_clone,
@@ -494,6 +599,7 @@ fn check_linearizability_rec<M: LockstepModel>(
                 best_depth,
                 best_trace,
                 current_trace,
+                &mut child_sleep,
             ) {
                 cursors[branch_id] -= 1;
                 current_trace.pop();
@@ -502,6 +608,7 @@ fn check_linearizability_rec<M: LockstepModel>(
 
             cursors[branch_id] -= 1;
             current_trace.pop();
+            explored.push(branch_id);
         } else {
             // Track the closest match for error reporting
             if depth > *best_depth {
@@ -545,7 +652,7 @@ fn check_linearizability_rec<M: LockstepModel>(
 pub fn lockstep_linearizable<M>(config: ConcurrentConfig)
 where
     M: ConcurrentLockstepModel + Send + Sync,
-    M::ModelState: Send + Sync,
+    M::ModelState: Send + Sync + PartialEq,
     M::Sut: Send,
 {
     lockstep_linearizable_with_check::<M, _>(config, |_| {});
@@ -556,7 +663,7 @@ where
 pub fn lockstep_linearizable_with_check<M, F>(config: ConcurrentConfig, check_final: F)
 where
     M: ConcurrentLockstepModel + Send + Sync,
-    M::ModelState: Send + Sync,
+    M::ModelState: Send + Sync + PartialEq,
     M::Sut: Send,
     F: Fn(&M::Sut) + Send + Sync + 'static,
 {
@@ -865,7 +972,7 @@ where
 pub fn lockstep_linearizable_loom<M>(config: LoomConfig)
 where
     M: ConcurrentLockstepModel + Send + Sync + 'static,
-    M::ModelState: Send + Sync,
+    M::ModelState: Send + Sync + PartialEq,
     M::Sut: Send,
 {
     lockstep_linearizable_loom_with_check::<M, _>(config, |_| {});
@@ -876,7 +983,7 @@ where
 pub fn lockstep_linearizable_loom_with_check<M, F>(config: LoomConfig, check_final: F)
 where
     M: ConcurrentLockstepModel + Send + Sync + 'static,
-    M::ModelState: Send + Sync,
+    M::ModelState: Send + Sync + PartialEq,
     M::Sut: Send,
     F: Fn(&M::Sut) + Send + Sync + 'static,
 {
@@ -1271,5 +1378,182 @@ mod tests {
         assert!(check_linearizability::<MockModel>(
             &(), &env, &branches, 1000, BudgetExceeded::Fail
         ).is_ok());
+    }
+
+    // -----------------------------------------------------------------------
+    // Commutativity detection unit tests
+    // -----------------------------------------------------------------------
+
+    // A model with a HashMap to test commutativity with real state.
+    #[derive(Debug, Clone, PartialEq)]
+    struct KvModelState {
+        data: std::collections::HashMap<String, String>,
+    }
+
+    // Actions for the stateful model
+    #[derive(Debug, Clone)]
+    struct PutAction { key: String, value: String }
+    #[derive(Debug, Clone)]
+    struct GetAction { key: String }
+
+    impl AnyAction for PutAction {
+        fn as_any(&self) -> &dyn Any { self }
+        fn used_vars(&self) -> Vec<usize> { vec![] }
+        fn check_bridge(&self, model: &dyn Any, sut: &dyn Any) -> Result<(), String> {
+            let m = model.downcast_ref::<Option<String>>().unwrap();
+            let s = sut.downcast_ref::<Option<String>>().unwrap();
+            if m == s { Ok(()) } else { Err(format!("{:?} != {:?}", m, s)) }
+        }
+        fn store_model_var(&self, _: usize, _: &dyn Any, _: &mut TypedEnv) {}
+        fn store_sut_var(&self, _: usize, _: &dyn Any, _: &mut TypedEnv) {}
+    }
+
+    impl AnyAction for GetAction {
+        fn as_any(&self) -> &dyn Any { self }
+        fn used_vars(&self) -> Vec<usize> { vec![] }
+        fn check_bridge(&self, model: &dyn Any, sut: &dyn Any) -> Result<(), String> {
+            let m = model.downcast_ref::<Option<String>>().unwrap();
+            let s = sut.downcast_ref::<Option<String>>().unwrap();
+            if m == s { Ok(()) } else { Err(format!("{:?} != {:?}", m, s)) }
+        }
+        fn store_model_var(&self, _: usize, _: &dyn Any, _: &mut TypedEnv) {}
+        fn store_sut_var(&self, _: usize, _: &dyn Any, _: &mut TypedEnv) {}
+    }
+
+    #[derive(Debug, Clone)]
+    struct KvMockModel;
+
+    impl LockstepModel for KvMockModel {
+        type ModelState = KvModelState;
+        type Sut = ();
+        fn init_model() -> KvModelState {
+            KvModelState { data: std::collections::HashMap::new() }
+        }
+        fn init_sut() -> () { () }
+        fn gen_action(_: &KvModelState, _: &TypedEnv) -> proptest::strategy::BoxedStrategy<Box<dyn AnyAction>> {
+            unimplemented!()
+        }
+        fn step_model(state: &mut KvModelState, action: &dyn AnyAction, _: &TypedEnv) -> Box<dyn Any> {
+            if let Some(put) = action.as_any().downcast_ref::<PutAction>() {
+                Box::new(state.data.insert(put.key.clone(), put.value.clone()))
+            } else if let Some(get) = action.as_any().downcast_ref::<GetAction>() {
+                Box::new(state.data.get(&get.key).cloned())
+            } else {
+                Box::new(())
+            }
+        }
+        fn step_sut(_: &mut (), _: &dyn AnyAction, _: &TypedEnv) -> Box<dyn Any> {
+            Box::new(())
+        }
+    }
+
+    #[test]
+    fn commute_disjoint_keys() {
+        // Put("x", "1") and Put("y", "2") touch different keys — they commute
+        let model = KvMockModel::init_model();
+        let env = TypedEnv::new();
+        let a = OpRecord {
+            action: Box::new(PutAction { key: "x".into(), value: "1".into() }),
+            result: Box::new(None::<String>),
+            var_id: 0,
+        };
+        let b = OpRecord {
+            action: Box::new(PutAction { key: "y".into(), value: "2".into() }),
+            result: Box::new(None::<String>),
+            var_id: 1,
+        };
+        assert!(operations_commute::<KvMockModel>(&model, &env, &a, &b));
+    }
+
+    #[test]
+    fn no_commute_same_key() {
+        // Put("x", "1") and Put("x", "2") touch the same key — don't commute
+        // because final state differs: {x: "2"} vs {x: "1"}
+        let model = KvMockModel::init_model();
+        let env = TypedEnv::new();
+        let a = OpRecord {
+            action: Box::new(PutAction { key: "x".into(), value: "1".into() }),
+            result: Box::new(None::<String>),
+            var_id: 0,
+        };
+        let b = OpRecord {
+            action: Box::new(PutAction { key: "x".into(), value: "2".into() }),
+            result: Box::new(None::<String>),
+            var_id: 1,
+        };
+        assert!(!operations_commute::<KvMockModel>(&model, &env, &a, &b));
+    }
+
+    #[test]
+    fn commute_get_different_key() {
+        // Get("y") and Put("x", "1") touch different keys — they commute
+        let model = KvMockModel::init_model();
+        let env = TypedEnv::new();
+        let a = OpRecord {
+            action: Box::new(GetAction { key: "y".into() }),
+            result: Box::new(None::<String>),
+            var_id: 0,
+        };
+        let b = OpRecord {
+            action: Box::new(PutAction { key: "x".into(), value: "1".into() }),
+            result: Box::new(None::<String>),
+            var_id: 1,
+        };
+        assert!(operations_commute::<KvMockModel>(&model, &env, &a, &b));
+    }
+
+    #[test]
+    fn no_commute_get_same_key_as_put() {
+        // Get("x") and Put("x", "1") — Get returns None vs Some("1")
+        // depending on order, so they don't commute
+        let model = KvMockModel::init_model();
+        let env = TypedEnv::new();
+        let a = OpRecord {
+            action: Box::new(GetAction { key: "x".into() }),
+            result: Box::new(None::<String>),
+            var_id: 0,
+        };
+        let b = OpRecord {
+            action: Box::new(PutAction { key: "x".into(), value: "1".into() }),
+            result: Box::new(None::<String>),
+            var_id: 1,
+        };
+        assert!(!operations_commute::<KvMockModel>(&model, &env, &a, &b));
+    }
+
+    #[test]
+    fn commute_two_gets() {
+        // Get("x") and Get("y") are both reads — always commute
+        let model = KvMockModel::init_model();
+        let env = TypedEnv::new();
+        let a = OpRecord {
+            action: Box::new(GetAction { key: "x".into() }),
+            result: Box::new(None::<String>),
+            var_id: 0,
+        };
+        let b = OpRecord {
+            action: Box::new(GetAction { key: "y".into() }),
+            result: Box::new(None::<String>),
+            var_id: 1,
+        };
+        assert!(operations_commute::<KvMockModel>(&model, &env, &a, &b));
+    }
+
+    #[test]
+    fn commute_two_gets_same_key() {
+        // Get("x") and Get("x") — both read same key, still commute
+        let model = KvMockModel::init_model();
+        let env = TypedEnv::new();
+        let a = OpRecord {
+            action: Box::new(GetAction { key: "x".into() }),
+            result: Box::new(None::<String>),
+            var_id: 0,
+        };
+        let b = OpRecord {
+            action: Box::new(GetAction { key: "x".into() }),
+            result: Box::new(None::<String>),
+            var_id: 1,
+        };
+        assert!(operations_commute::<KvMockModel>(&model, &env, &a, &b));
     }
 }
