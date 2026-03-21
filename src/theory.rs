@@ -22,7 +22,8 @@
 //! The **fundamental theorem** (proved in `Bridge.lean`): each lift
 //! preserves bridge equivalence. If component values are related by
 //! their bridges, the lifted compound values are related by the
-//! lifted bridge.
+//! lifted bridge. Sum bridge variant mismatches are detected in both
+//! directions (`sum_variant_mismatch_lr`, `sum_variant_mismatch_rl`).
 //!
 //! # Bounded Bisimulation
 //!
@@ -44,14 +45,35 @@
 //! - **Single-step** (`single_step_bisim`): one-step bridge agreement
 //!   implies depth-1 bisimulation.
 //!
+//! # Runner Correspondence (proved in `Runner.lean`)
+//!
+//! The test runner is modeled as a trace-based predicate
+//! `runner_passes` that mirrors `LockstepSut::apply`: for each
+//! action in the trace, run the model and SUT, check bridge
+//! equivalence, and continue with successor states.
+//!
+//! The **runner correspondence theorem** (`runner_bounded_bisim_equiv`)
+//! proves a biconditional:
+//!
+//! ```text
+//! (∀ traces of length n, runner_passes trace sm ss)
+//!   ↔ bounded_bisim n sm ss
+//! ```
+//!
+//! This establishes that the runner's operational bridge checks are
+//! *exactly* the obligations of bounded bisimulation — no more, no
+//! less. The forward direction (`runner_implies_bounded_bisim`) is the
+//! soundness result: passing tests imply bisimulation. The reverse
+//! direction (`bounded_bisim_implies_runner`) confirms completeness:
+//! bisimulation implies the runner would pass.
+//!
 //! # Soundness (proved in `Soundness.lean`)
 //!
+//! - `lockstep_test_sound`: runner passing on all traces → `bounded_bisim`
+//! - `deeper_test_stronger`: depth monotonicity for the test runner
+//! - `testing_depth_increases_strength`: depth n+1 implies depth n
 //! - `transparent_equiv_is_eq`: transparent bridge equivalence = equality
 //! - `opaque_equiv_trivial`: opaque bridge equivalence is always true
-//! - `sum_bridge_sound_ok/err`: sum bridge correctly classifies variants
-//! - `sum_bridge_variant_mismatch_lr/rl`: sum bridge detects variant mismatches
-//! - `prod_bridge_sound`: product equivalence ↔ component equivalence
-//! - `deeper_test_stronger`: depth monotonicity for the test runner
 //!
 //! # Opacity and Behavioral Equivalence
 //!
@@ -65,15 +87,10 @@
 //!
 //! # What Is NOT Formalized
 //!
-//! The Lean formalization covers the algebraic properties of the
-//! bridge algebra and the bisimulation relation. It does not
-//! formalize:
+//! The Lean formalization covers the bridge algebra, the bisimulation
+//! relation, and the runner correspondence. It does not formalize:
 //! - The proptest generation/shrinking machinery
 //! - The `TypedEnv` variable resolution mechanism
 //! - Precondition filtering
 //! - DPOR soundness (planned)
 //! - The probabilistic guarantee (how many test cases are needed)
-//!
-//! The connection between the test runner's operational behavior and
-//! the bisimulation is stated informally: the runner checks exactly
-//! the conditions of `bounded_bisim` at each step.

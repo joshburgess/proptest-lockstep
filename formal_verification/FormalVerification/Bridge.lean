@@ -110,11 +110,19 @@ theorem sum_preserves_err (bOk : Bridge ROk MOk) (bErr : Bridge RErr MErr)
   simp
   exact h
 
--- Sum bridge detects variant mismatches
+-- Sum bridge detects variant mismatches (left-right)
 theorem sum_variant_mismatch_lr (bOk : Bridge ROk MOk) (bErr : Bridge RErr MErr)
     [DecidableEq bOk.Observed] [DecidableEq bErr.Observed]
     (r : ROk) (m : MErr) :
     ¬ bridge_equiv (sumBridge bOk bErr) (.inl r) (.inr m) := by
+  unfold bridge_equiv sumBridge
+  simp
+
+-- Sum bridge detects variant mismatches (right-left)
+theorem sum_variant_mismatch_rl (bOk : Bridge ROk MOk) (bErr : Bridge RErr MErr)
+    [DecidableEq bOk.Observed] [DecidableEq bErr.Observed]
+    (r : RErr) (m : MOk) :
+    ¬ bridge_equiv (sumBridge bOk bErr) (.inr r) (.inl m) := by
   unfold bridge_equiv sumBridge
   simp
 
