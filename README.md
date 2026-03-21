@@ -19,7 +19,7 @@ The framework handles:
 
 ```toml
 [dev-dependencies]
-proptest-lockstep = "0.2"
+proptest-lockstep = "0.3"
 proptest = "1"
 ```
 
@@ -61,6 +61,10 @@ See the examples:
 - **Linearizability** (`lockstep_linearizable`) — verifies concurrent results are consistent with some sequential model execution. Requires implementing `ConcurrentLockstepModel` (one method). Brute-force interleaving checker with configurable budget via `BudgetExceeded`
 - **Exhaustive schedule enumeration** via loom (`lockstep_concurrent_loom`, `lockstep_linearizable_loom`) — explores all possible thread schedules
 
+**Dynamic partial-order reduction (DPOR).** The linearizability checker automatically detects commuting operations by running both orderings against the model, and uses sleep sets to prune redundant interleavings. This is a novel application of DPOR to property-based testing — the model serves as the commutativity oracle.
+
+**Model-guided scheduling (`ConflictMaximizing`).** Actions are distributed across branches to maximize contention — operations that don't commute are placed on different threads. The model is used as a semantic oracle to guide the split, a technique with no precedent in the concurrency testing literature.
+
 **Async SUT support.** Test async systems with synchronous models via the `async` feature flag.
 
 ## Features
@@ -92,7 +96,8 @@ The `concurrent` and `concurrent-loom` features are independent — each provide
 | Phase distinction | HKT (`Symbolic`/`Concrete`) | GATs (`Phase::Var<T>`) |
 | Shrinking | Manual `shrinkWithVars` | **Integrated (free via proptest)** |
 | Concurrent testing | None | **Shuttle + loom integration** |
-| Linearizability checking | None | **Brute-force interleaving checker** |
+| Linearizability checking | None | **Interleaving checker with DPOR** |
+| Schedule guidance | None | **Model-guided ConflictMaximizing split** |
 | Async support | None | **async_trait support** |
 
 ## License
