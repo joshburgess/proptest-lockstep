@@ -6,4 +6,5 @@
 
 import FormalVerification.Bridge
 import FormalVerification.Lockstep
+import FormalVerification.Runner
 import FormalVerification.Soundness
