@@ -8,5 +8,6 @@ import FormalVerification.Bridge
 import FormalVerification.DPOR
 import FormalVerification.Lockstep
 import FormalVerification.OpaqueDetection
+import FormalVerification.Precondition
 import FormalVerification.Runner
 import FormalVerification.Soundness
