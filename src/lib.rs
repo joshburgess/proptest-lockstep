@@ -6,6 +6,7 @@ pub mod model;
 pub mod op;
 pub mod phase;
 pub mod runner;
+pub mod theory;
 pub mod witness;
 
 #[cfg(feature = "concurrent")]
