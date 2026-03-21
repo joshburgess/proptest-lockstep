@@ -81,6 +81,25 @@
 //! direction (`bounded_bisim_implies_runner`) confirms completeness:
 //! bisimulation implies the runner would pass.
 //!
+//! # Observational Refinement (proved in `ObservationalRefinement.lean`)
+//!
+//! The central theoretical result: bounded bisimulation implies
+//! observational indistinguishability. The SUT observationally
+//! refines the model — no interaction through the bridge API can
+//! distinguish them within the tested depth.
+//!
+//! Key theorems:
+//! - `observational_refinement`: for any prefix of length < n and
+//!   any action, the bridge observations are identical
+//! - `observational_refinement_equiv`: bounded bisimulation is
+//!   *equivalent* to observational refinement (biconditional),
+//!   closing the circle: runner passes ↔ bounded_bisim ↔
+//!   observational refinement
+//! - `bisim_along_trace`: bisimulation is preserved along any
+//!   prefix — the guarantee doesn't degrade during execution
+//! - `bisim_observation_after_prefix`: observations remain equal
+//!   at every point along a trace
+//!
 //! # Soundness (proved in `Soundness.lean`)
 //!
 //! - `lockstep_test_sound`: runner passing on all traces → `bounded_bisim`
