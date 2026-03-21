@@ -25,6 +25,20 @@
 //! lifted bridge. Sum bridge variant mismatches are detected in both
 //! directions (`sum_variant_mismatch_lr`, `sum_variant_mismatch_rl`).
 //!
+//! ## Bridge Refinement Ordering (proved in `BridgeRefinement.lean`)
+//!
+//! Bridges form a preorder under refinement (`bridge_refines`): B1
+//! refines B2 if every pair related by B1 is also related by B2.
+//! - `opaque_coarsest`: every bridge refines opaque (trivial relation)
+//! - `transparent_refines_uniform`: transparent refines any bridge
+//!   with uniform observation functions (identity is finest)
+//! - `refines_refl`, `refines_trans`: preorder structure
+//! - `sum_refines`, `prod_refines`, `option_refines`: lifts are
+//!   monotone — finer components produce finer composite bridges
+//! - `refines_strengthen_bisim`: replacing bridges with finer ones
+//!   preserves bounded bisimulation (finer observation = stronger
+//!   guarantee)
+//!
 //! # Bounded Bisimulation
 //!
 //! A passing lockstep test at depth n establishes a *bounded

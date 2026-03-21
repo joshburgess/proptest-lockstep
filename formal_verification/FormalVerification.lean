@@ -5,6 +5,7 @@
 -- bisimulation, and soundness theorems.
 
 import FormalVerification.Bridge
+import FormalVerification.BridgeRefinement
 import FormalVerification.DPOR
 import FormalVerification.Lockstep
 import FormalVerification.OpaqueDetection
