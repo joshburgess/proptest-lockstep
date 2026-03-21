@@ -104,7 +104,7 @@
 //! Rust `operations_commute`. This means the formal guarantee is
 //! conservative — it covers all cases the Rust implementation handles.
 //!
-//! # Opacity and Behavioral Equivalence
+//! # Opacity and Behavioral Equivalence (proved in `OpaqueDetection.lean`)
 //!
 //! `Opaque<R, M>` weakens the guarantee from trace equivalence to
 //! *behavioral equivalence*: a wrong handle is not detected at the
@@ -114,10 +114,25 @@
 //! the behavioral difference manifests at depth n+k when the handle
 //! is used in a subsequent action with a transparent bridge.
 //!
+//! Key theorems:
+//! - `detection_at_successor`: failure at successor states propagates
+//!   to the parent (the inductive mechanism behind delayed detection)
+//! - `failure_propagates_up`: failure at depth n implies failure at
+//!   all depths m ≥ n (contrapositive of monotonicity)
+//! - `opaque_step_then_detect`: wrong opaque handle + discriminating
+//!   follow-up action → `bounded_bisim 2` fails
+//! - `opaque_delayed_detection`: general k-step delayed detection
+//! - `opaque_runner_transparent`: an opaque step in the runner is
+//!   transparent — it passes iff the tail passes on successor states
+//! - `opaque_depth_sensitivity`: depth 1 can pass while depth 2
+//!   fails, proving deeper testing is strictly necessary for opaque
+//!   handles
+//!
 //! # What Is NOT Formalized
 //!
 //! The Lean formalization covers the bridge algebra, the bisimulation
-//! relation, and the runner correspondence. It does not formalize:
+//! relation, the runner correspondence, DPOR soundness, and opaque
+//! handle detection. It does not formalize:
 //! - The proptest generation/shrinking machinery
 //! - The `TypedEnv` variable resolution mechanism
 //! - Precondition filtering
