@@ -36,7 +36,7 @@ impl KvStore {
 // Model
 // ============================================================================
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct KvModel {
     data: HashMap<String, String>,
 }

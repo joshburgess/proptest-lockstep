@@ -75,7 +75,7 @@ impl RealFs {
 // Model
 // ============================================================================
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MockFs {
     files: HashMap<String, String>,
     open: HashMap<MockHandle, String>,
