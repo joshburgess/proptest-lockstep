@@ -128,12 +128,27 @@
 //!   fails, proving deeper testing is strictly necessary for opaque
 //!   handles
 //!
+//! # Precondition Filtering (proved in `Precondition.lean`)
+//!
+//! The test runner only checks actions satisfying a model-state-dependent
+//! precondition (`LockstepModel::precondition`). The `precond_bisim`
+//! definition restricts the universal quantification to precondition-
+//! satisfying actions.
+//!
+//! Key theorems:
+//! - `universal_implies_preconditioned`: the universal bisimulation
+//!   (used in other Lean files) implies preconditioned bisimulation,
+//!   so existing proofs are conservative
+//! - `precond_bisim_mono`: monotonicity for preconditioned bisimulation
+//! - `precond_runner_implies_bisim`: preconditioned runner correspondence
+//! - `precond_bisim_step`: single-step decomposition of preconditioned
+//!   bisimulation
+//!
 //! # What Is NOT Formalized
 //!
 //! The Lean formalization covers the bridge algebra, the bisimulation
-//! relation, the runner correspondence, DPOR soundness, and opaque
-//! handle detection. It does not formalize:
+//! relation, the runner correspondence, DPOR soundness, opaque handle
+//! detection, and precondition filtering. It does not formalize:
 //! - The proptest generation/shrinking machinery
 //! - The `TypedEnv` variable resolution mechanism
-//! - Precondition filtering
 //! - The probabilistic guarantee (how many test cases are needed)
