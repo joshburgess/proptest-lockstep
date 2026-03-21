@@ -430,7 +430,7 @@ The **Op DSL** is adapted from the Haskell original but differs in one key way: 
 
 ```toml
 [dev-dependencies]
-proptest-lockstep = "0.2"
+proptest-lockstep = "0.3"
 proptest = "1"
 ```
 

@@ -195,4 +195,19 @@ mod tests {
             ..Default::default()
         });
     }
+
+    #[test]
+    fn concurrent_kv_conflict_maximizing() {
+        // Model-guided split: the model is used to detect conflicting
+        // operations and place them on different branches, maximizing
+        // the chance that Shuttle's scheduler interleaves them.
+        lockstep_linearizable::<KvLockstep>(ConcurrentConfig {
+            iterations: 50,
+            prefix_len: 3,
+            branch_len: 4,
+            branch_count: 2,
+            split_strategy: SplitStrategy::ConflictMaximizing,
+            ..Default::default()
+        });
+    }
 }
