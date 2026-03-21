@@ -2,16 +2,24 @@
   Soundness of Lockstep Testing
 
   The main theorems connecting lockstep testing to formal guarantees.
+  The central result is `lockstep_test_sound`: if the runner passes
+  on all traces of length n, then bounded bisimulation holds at depth n.
 -/
 
-import FormalVerification.Lockstep
+import FormalVerification.Runner
 
-/-- A passing lockstep test at depth n IS the bounded bisimulation. -/
+/--
+  **Soundness of lockstep testing.**
+  If the test runner passes on all action traces of length n
+  (i.e., bridge_equiv holds at each step for every possible trace),
+  then bounded bisimulation holds at depth n.
+-/
 theorem lockstep_test_sound (sys : LockstepSystem) (n : Nat)
     (sm₀ : sys.SM) (ss₀ : sys.SS)
-    (h : bounded_bisim sys n sm₀ ss₀) :
+    (h : ∀ (trace : List sys.ActionIdx), trace.length = n →
+         runner_passes sys trace sm₀ ss₀) :
     bounded_bisim sys n sm₀ ss₀ :=
-  h
+  (runner_bounded_bisim_equiv sys n sm₀ ss₀).mp h
 
 /-- Deeper tests give strictly stronger guarantees. -/
 theorem deeper_test_stronger (sys : LockstepSystem) (sm : sys.SM) (ss : sys.SS)
