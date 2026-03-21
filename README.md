@@ -13,13 +13,13 @@ The framework handles:
 - **Shrinking** — automatic via proptest, no manual shrinker needed
 - **Observability** — composable bridges for comparing opaque handles
 - **Variable tracking** — typed projection chains for compound return types
-- **Concurrency** — crash-absence testing via Shuttle
+- **Concurrency** — crash-absence testing (Shuttle), linearizability checking, and exhaustive schedule enumeration (loom)
 
 ## Quick start
 
 ```toml
 [dev-dependencies]
-proptest-lockstep = "0.1"
+proptest-lockstep = "0.2"
 proptest = "1"
 ```
 
@@ -38,7 +38,11 @@ pub mod actions {
 
 Each action declares its return type and a bridge describing how to compare real and model outputs. The proc macro generates a GADT enum, typed interpreter traits, bridge dispatch, and variable storage.
 
-See [`examples/kv_store.rs`](examples/kv_store.rs) for the simplest complete example and [`examples/file_system.rs`](examples/file_system.rs) for opaque handles with GVar projections.
+See the examples:
+- [`examples/kv_store.rs`](examples/kv_store.rs) — simplest case, all transparent types
+- [`examples/file_system.rs`](examples/file_system.rs) — opaque handles with GVar projections
+- [`examples/kv_concurrent.rs`](examples/kv_concurrent.rs) — concurrent crash-absence + linearizability
+- [`examples/fs_concurrent.rs`](examples/fs_concurrent.rs) — linearizability with opaque handles
 
 ## Key features
 
@@ -52,7 +56,10 @@ See [`examples/kv_store.rs`](examples/kv_store.rs) for the simplest complete exa
 
 **Model-side variable resolution.** `resolve_model_gvar` handles the asymmetry when model and SUT types differ for opaque handles.
 
-**Concurrent crash-absence testing.** Shuttle integration with configurable split strategies (`RoundRobin`, `Random`), N-branch support, trace collection on panic, and optional final state checks.
+**Concurrent testing with three levels of verification:**
+- **Crash-absence** (`lockstep_concurrent`) — verifies no panics or deadlocks under randomized Shuttle schedules
+- **Linearizability** (`lockstep_linearizable`) — verifies concurrent results are consistent with some sequential model execution. Requires implementing `ConcurrentLockstepModel` (one method). Brute-force interleaving checker with configurable budget via `BudgetExceeded`
+- **Exhaustive schedule enumeration** via loom (`lockstep_concurrent_loom`, `lockstep_linearizable_loom`) — explores all possible thread schedules
 
 **Async SUT support.** Test async systems with synchronous models via the `async` feature flag.
 
@@ -60,14 +67,19 @@ See [`examples/kv_store.rs`](examples/kv_store.rs) for the simplest complete exa
 
 ```toml
 # Proc macro (enabled by default)
-proptest-lockstep = { version = "0.1", features = ["derive"] }
+proptest-lockstep = { version = "0.2", features = ["derive"] }
 
-# Concurrent testing via Shuttle
-proptest-lockstep = { version = "0.1", features = ["concurrent"] }
+# Concurrent testing via Shuttle (crash-absence + linearizability)
+proptest-lockstep = { version = "0.2", features = ["concurrent"] }
+
+# Exhaustive concurrent testing via loom
+proptest-lockstep = { version = "0.2", features = ["concurrent-loom"] }
 
 # Async SUT support
-proptest-lockstep = { version = "0.1", features = ["async"] }
+proptest-lockstep = { version = "0.2", features = ["async"] }
 ```
+
+The `concurrent` and `concurrent-loom` features are independent — each provides its own entry points and they can coexist.
 
 ## How it compares to Haskell's quickcheck-lockstep
 
@@ -79,7 +91,8 @@ proptest-lockstep = { version = "0.1", features = ["async"] }
 | Variable projections | `GVar op f` + `Op` DSL | `GVar<X,Y,O>` + `Op<A,B>` trait |
 | Phase distinction | HKT (`Symbolic`/`Concrete`) | GATs (`Phase::Var<T>`) |
 | Shrinking | Manual `shrinkWithVars` | **Integrated (free via proptest)** |
-| Concurrent testing | None | **Shuttle integration** |
+| Concurrent testing | None | **Shuttle + loom integration** |
+| Linearizability checking | None | **Brute-force interleaving checker** |
 | Async support | None | **async_trait support** |
 
 ## License

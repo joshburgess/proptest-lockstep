@@ -3,7 +3,7 @@ members = [".", "proptest-lockstep-derive"]
 
 [package]
 name = "proptest-lockstep"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.65"
 description = "Lockstep-style stateful property testing for Rust"
@@ -18,9 +18,10 @@ proptest = "1"
 proptest-state-machine = "0.3"
 dyn-clone = "1"
 shuttle = { version = "0.8", optional = true }
+loom = { version = "0.7", optional = true }
 async-trait = { version = "0.1", optional = true }
 
-proptest-lockstep-derive = { version = "0.1.0", path = "proptest-lockstep-derive", optional = true }
+proptest-lockstep-derive = { version = "0.2.0", path = "proptest-lockstep-derive", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -29,4 +30,5 @@ tokio = { version = "1", features = ["full"] }
 default = ["derive"]
 derive = ["dep:proptest-lockstep-derive"]
 concurrent = ["shuttle"]
+concurrent-loom = ["loom"]
 async = ["async-trait"]

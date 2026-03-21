@@ -625,14 +625,16 @@ fn gen_dispatch_fns(
         }
     });
 
-    let sut_arms = actions.iter().map(|a| {
+    let sut_arms: Vec<_> = actions.iter().map(|a| {
         let ident = &a.ident;
         let method = format_ident!("{}", to_snake_case(&ident.to_string()));
         quote! {
             #any_name::#ident(#gadt_name::#ident(_, ref action)) =>
                 Box::new(I::#method(sut, action, env))
         }
-    });
+    }).collect();
+
+    let sut_arms_send = sut_arms.clone();
 
     quote! {
         /// Dispatch to the typed model interpreter. Use as the body of
@@ -662,6 +664,25 @@ fn gen_dispatch_fns(
                 .expect(concat!("dispatch_sut: expected ", stringify!(#any_name)));
             match a {
                 #(#sut_arms,)*
+                #[allow(unreachable_patterns)]
+                _ => unreachable!()
+            }
+        }
+
+        /// Dispatch to the typed SUT interpreter, returning a `Send`-able result.
+        /// Use as the body of `ConcurrentLockstepModel::step_sut_send`.
+        ///
+        /// This is identical to `dispatch_sut` but returns `Box<dyn Any + Send>`.
+        /// Requires all SUT return types to be `Send`.
+        pub fn dispatch_sut_send<I: #sut_interp>(
+            sut: &mut I::Sut,
+            action: &dyn proptest_lockstep::action::AnyAction,
+            env: &TypedEnv,
+        ) -> Box<dyn std::any::Any + Send> {
+            let a = action.as_any().downcast_ref::<#any_name>()
+                .expect(concat!("dispatch_sut_send: expected ", stringify!(#any_name)));
+            match a {
+                #(#sut_arms_send,)*
                 #[allow(unreachable_patterns)]
                 _ => unreachable!()
             }

@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 //! Concurrent key-value store lockstep test.
 //!
-//! Demonstrates concurrent lockstep testing: crash-absence and final-state
-//! consistency under randomized Shuttle schedules.
+//! Demonstrates all three levels of concurrent lockstep testing:
+//! crash-absence, final-state consistency, and linearizability
+//! under randomized Shuttle schedules.
 //!
 //! Run with: `cargo test --example kv_concurrent --features concurrent`
 
@@ -121,6 +122,21 @@ impl LockstepModel for KvLockstep {
     }
 }
 
+// ============================================================================
+// ConcurrentLockstepModel — opt-in for linearizability checking
+// ============================================================================
+
+#[cfg(feature = "concurrent")]
+impl proptest_lockstep::concurrent::ConcurrentLockstepModel for KvLockstep {
+    fn step_sut_send(
+        sut: &mut KvStore,
+        action: &dyn AnyAction,
+        env: &TypedEnv,
+    ) -> Box<dyn Any + Send> {
+        kv::dispatch_sut_send::<KvLockstep>(sut, action, env)
+    }
+}
+
 fn main() {
     println!("Run with `cargo test --example kv_concurrent --features concurrent`");
 }
@@ -130,22 +146,24 @@ mod tests {
     use super::*;
     use proptest_lockstep::concurrent::{
         lockstep_concurrent, lockstep_concurrent_with_check,
+        lockstep_linearizable,
         ConcurrentConfig, SplitStrategy,
     };
 
     #[test]
-    fn concurrent_kv_round_robin() {
+    fn concurrent_kv_crash_absence() {
         lockstep_concurrent::<KvLockstep>(ConcurrentConfig {
             iterations: 100,
             prefix_len: 5,
             branch_len: 4,
             branch_count: 2,
             split_strategy: SplitStrategy::RoundRobin,
+            ..Default::default()
         });
     }
 
     #[test]
-    fn concurrent_kv_random_3_branches() {
+    fn concurrent_kv_with_final_check() {
         lockstep_concurrent_with_check::<KvLockstep, _>(
             ConcurrentConfig {
                 iterations: 100,
@@ -153,17 +171,28 @@ mod tests {
                 branch_len: 5,
                 branch_count: 3,
                 split_strategy: SplitStrategy::Random { seed: 42 },
+                ..Default::default()
             },
             |sut: &KvStore| {
-                // Final state check: verify internal consistency.
-                // The reported length must match the actual number of entries.
                 assert_eq!(sut.len(), sut.data.len());
-                // Every key must have a non-empty value (our generator
-                // produces [a-z]{1,10} values, never empty).
                 for (_k, v) in &sut.data {
                     assert!(!v.is_empty(), "Empty value found in final state");
                 }
             },
         );
+    }
+
+    #[test]
+    fn concurrent_kv_linearizable() {
+        // Full linearizability check: every concurrent execution must
+        // be consistent with some sequential ordering against the model.
+        lockstep_linearizable::<KvLockstep>(ConcurrentConfig {
+            iterations: 50,
+            prefix_len: 3,
+            branch_len: 3,
+            branch_count: 2,
+            split_strategy: SplitStrategy::RoundRobin,
+            ..Default::default()
+        });
     }
 }

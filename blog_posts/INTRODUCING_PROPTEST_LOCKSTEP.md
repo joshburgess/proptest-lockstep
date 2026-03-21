@@ -361,7 +361,11 @@ If you're already using `proptest` or `proptest-state-machine`, here's what `pro
 
 **Variable management is automatic.** The framework tracks which actions produce variables, which actions consume them, and ensures that preconditions are maintained during shrinking. If the shrinker removes an `Open` action, all dependent `Write` and `Close` actions are automatically removed too.
 
-**Concurrency testing for crash-absence.** By integrating with Shuttle, you can run your actions under a randomized thread scheduler, testing that your system doesn't panic or deadlock under concurrent access. This verifies crash-absence, not full linearizability — but it catches data races and deadlocks that sequential tests miss. Neither `quickcheck-lockstep` nor Hedgehog offers this. The concurrent module supports configurable split strategies (`RoundRobin` or `Random { seed }` for reproducible randomized splits), an arbitrary number of concurrent branches via `branch_count`, per-branch trace collection on panic, and an optional final state check via `lockstep_concurrent_with_check` for verifying SUT consistency after concurrent operations.
+**Concurrent testing with three levels of verification.** Neither `quickcheck-lockstep` nor Hedgehog offers concurrent testing. `proptest-lockstep` provides three levels, each strictly stronger than the last:
+
+- **Crash-absence** (`lockstep_concurrent`) — run actions under Shuttle's randomized thread scheduler, verifying no panics or deadlocks. Configurable split strategies (`RoundRobin`, `Random { seed }`), N-branch support, per-branch trace collection on panic, and optional final state checks.
+- **Linearizability** (`lockstep_linearizable`) — collect per-operation results across threads and verify that every concurrent execution is consistent with some sequential ordering against the model. Uses a brute-force interleaving checker with per-interleaving model state and `TypedEnv` tracking. Requires implementing `ConcurrentLockstepModel` (one method: `step_sut_send`). Configurable budget via `BudgetExceeded` (`Warn`/`Fail`/`Pass`).
+- **Exhaustive schedule enumeration** via loom (`lockstep_concurrent_loom`, `lockstep_linearizable_loom`) — explores all possible thread schedules, not just random ones. Slower but provides stronger guarantees.
 
 **Async SUT support.** If your system-under-test is async (a database client, an HTTP service), `proptest-lockstep` supports async execution via the `async` feature flag. The model stays synchronous — it's a pure data structure — while the SUT runs under your async runtime. Note: the async path currently does not support shrinking of failing sequences, so counterexamples will be full-length.
 
@@ -412,7 +416,7 @@ No design is free. Here's what you trade:
 - **proptest-state-machine** (Zemanovič) added state machine strategies to proptest, inspired by Erlang's eqc_statem.
 - **Shuttle** (AWS) and **loom** (Tokio) provided concurrency testing infrastructure unique to the Rust ecosystem.
 
-I took the lockstep idea, the phase distinction, and the variable projection DSL, and rebuilt them for Rust's type system. Where Haskell uses GADTs, I use type equality witnesses. Where Haskell uses HKT, I use GATs. Where Haskell uses manual shrinking, I lean on proptest's integrated approach. And where Haskell has no answer, I integrate with Shuttle for concurrent crash-absence testing.
+I took the lockstep idea, the phase distinction, and the variable projection DSL, and rebuilt them for Rust's type system. Where Haskell uses GADTs, I use type equality witnesses. Where Haskell uses HKT, I use GATs. Where Haskell uses manual shrinking, I lean on proptest's integrated approach. And where Haskell has no answer, I integrate with Shuttle for concurrent crash-absence testing, loom for exhaustive schedule enumeration, and a brute-force linearizability checker that verifies concurrent results against the model.
 
 The **bridge algebra is a new contribution**, not a port. In Haskell's `quickcheck-lockstep`, users define two GADTs manually — `ModelValue` and `Observable` — with one constructor per type shape in their API. For a file system with five return types, that's ten GADT constructors plus two interpretation functions. The bridge algebra replaces all of this with composable combinators: `Transparent`, `Opaque`, `ResultBridge`, `TupleBridge`, `OptionBridge`, `VecBridge`. You describe the observability structure *declaratively*, and the compiler verifies that the bridge connects the right types. This is less code, more composable, and catches errors earlier.
 
@@ -426,10 +430,10 @@ The **Op DSL** is adapted from the Haskell original but differs in one key way: 
 
 ```toml
 [dev-dependencies]
-proptest-lockstep = "0.1"
+proptest-lockstep = "0.2"
 proptest = "1"
 ```
 
-The repository includes two worked examples: a key-value store (the simplest case — all transparent types, no handles) and a file system (the full case — opaque handles, GVar projections, composed bridges). The proc macro handles the heavy lifting — generating the GADT enum, visitor trait, bridge dispatch, variable storage, and typed interpreter traits. For simple cases, you're looking at maybe 50 lines of code beyond the model itself.
+The repository includes four worked examples: a key-value store (simplest case — transparent types), a file system (opaque handles, GVar projections, composed bridges), a concurrent key-value store (crash-absence, final-state checks, and linearizability), and a concurrent file system (linearizability with opaque handles). The proc macro handles the heavy lifting — generating the GADT enum, visitor trait, bridge dispatch, variable storage, typed interpreter traits, and `dispatch_sut_send` for linearizability. For simple cases, you're looking at maybe 50 lines of code beyond the model itself.
 
 For something that gives you exhaustive, compile-time-verified, automatically-shrunk, optionally-concurrent stateful property tests — I think that's a good trade.
