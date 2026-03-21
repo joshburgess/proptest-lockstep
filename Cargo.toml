@@ -1,0 +1,32 @@
+[workspace]
+members = [".", "proptest-lockstep-derive"]
+
+[package]
+name = "proptest-lockstep"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.65"
+description = "Lockstep-style stateful property testing for Rust"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/joshburgess/proptest-lockstep"
+readme = "README.md"
+keywords = ["proptest", "property-testing", "stateful", "lockstep", "model-checking"]
+categories = ["development-tools::testing"]
+
+[dependencies]
+proptest = "1"
+proptest-state-machine = "0.3"
+dyn-clone = "1"
+shuttle = { version = "0.8", optional = true }
+async-trait = { version = "0.1", optional = true }
+
+proptest-lockstep-derive = { version = "0.1.0", path = "proptest-lockstep-derive", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+
+[features]
+default = ["derive"]
+derive = ["dep:proptest-lockstep-derive"]
+concurrent = ["shuttle"]
+async = ["async-trait"]
