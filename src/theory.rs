@@ -382,4 +382,5 @@
 //! bisimulation, effect lattice, and certified synthesis. It does
 //! not formalize:
 //! - The proptest generation/shrinking machinery
+//! - GVar projection chain resolution (the `Op` DSL internals)
 //! - The probabilistic guarantee (how many test cases are needed)
