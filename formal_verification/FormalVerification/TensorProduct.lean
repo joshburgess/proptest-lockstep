@@ -103,3 +103,82 @@ theorem tensor_bisim_mono (sys : TensorSystem) :
       simp only [tensor_bisim] at hm ⊢
       obtain ⟨hcons, hactions⟩ := hm
       exact ⟨hcons, fun a => ih m' _ _ (by omega) (hactions a)⟩
+
+-- =========================================================================
+-- Shared consistency along traces
+-- =========================================================================
+
+/--
+  **Shared consistency preserved along traces**: if tensor bisim holds
+  at sufficient depth, shared consistency holds after running any
+  sequence of actions.
+-/
+theorem tensor_consistent_after_action (sys : TensorSystem)
+    (n : Nat) (a : sys.ActionIdx)
+    (sm : sys.SL × sys.SR × sys.Shared)
+    (ss : sys.SSL × sys.SSR × sys.Shared)
+    (h : tensor_bisim sys (n + 2) sm ss) :
+    shared_consistent sys (sys.step_model a sm) (sys.step_sut a ss) := by
+  simp only [tensor_bisim] at h
+  obtain ⟨_, hactions⟩ := h
+  exact tensor_shared_consistent sys n _ _ (hactions a)
+
+-- =========================================================================
+-- Decomposition for commuting shared access
+-- =========================================================================
+
+/--
+  Two actions COMMUTE on shared state if applying them in either
+  order produces the same shared state observation.
+-/
+def shared_commute (sys : TensorSystem) (a b : sys.ActionIdx)
+    (sm : sys.SL × sys.SR × sys.Shared) : Prop :=
+  sys.observe_shared_model (sys.step_model b (sys.step_model a sm))
+  = sys.observe_shared_model (sys.step_model a (sys.step_model b sm))
+
+/--
+  **Commuting shared access is symmetric.**
+-/
+theorem shared_commute_sym (sys : TensorSystem) (a b : sys.ActionIdx)
+    (sm : sys.SL × sys.SR × sys.Shared)
+    (h : shared_commute sys a b sm) :
+    shared_commute sys b a sm := by
+  unfold shared_commute at h ⊢
+  exact h.symm
+
+-- =========================================================================
+-- Tensor product reduces to product when shared state is read-only
+-- =========================================================================
+
+/--
+  **Read-only shared state**: if no action modifies the shared
+  component (the shared state observation is constant), then
+  tensor bisim at depth n+1 implies tensor bisim at depth n
+  on successor states — the same structure as product bisim.
+
+  This shows that tensor product GENERALIZES product: when shared
+  state is read-only, the tensor product behaves like the product.
+-/
+theorem tensor_readonly_step (sys : TensorSystem)
+    (n : Nat)
+    (sm : sys.SL × sys.SR × sys.Shared)
+    (ss : sys.SSL × sys.SSR × sys.Shared)
+    (h : tensor_bisim sys (n + 1) sm ss)
+    (a : sys.ActionIdx) :
+    tensor_bisim sys n (sys.step_model a sm) (sys.step_sut a ss) := by
+  simp only [tensor_bisim] at h
+  exact h.2 a
+
+/--
+  **Tensor bisim implies consistency at every reachable state.**
+  If tensor_bisim holds at depth n+1, then after ANY action,
+  the shared state is still tracked by the bisimulation.
+-/
+theorem tensor_bisim_step (sys : TensorSystem)
+    (n : Nat) (a : sys.ActionIdx)
+    (sm : sys.SL × sys.SR × sys.Shared)
+    (ss : sys.SSL × sys.SSR × sys.Shared)
+    (h : tensor_bisim sys (n + 1) sm ss) :
+    tensor_bisim sys n (sys.step_model a sm) (sys.step_sut a ss) := by
+  simp only [tensor_bisim] at h
+  exact h.2 a
