@@ -94,12 +94,11 @@ theorem sound_iff_no_violations (sys : CommutativitySpecSystem) :
 -- =========================================================================
 
 /--
-  **Symmetric spec is sound iff one direction is**: if the spec is
-  symmetric (should_commute a b ↔ should_commute b a), then checking
-  soundness in one direction suffices.
+  **Sound spec implies reversed commutativity**: if the spec is
+  sound (should_commute → model_commute), then should_commute also
+  implies model_commute in the reversed order (via `commute_sym`).
 -/
 theorem symmetric_spec_sound (sys : CommutativitySpecSystem)
-    (_hsym : ∀ a b sm, sys.should_commute a b sm → sys.should_commute b a sm)
     (hsound : spec_sound sys) :
     ∀ (a b : sys.ActionIdx) (sm : sys.SM),
       sys.should_commute a b sm →
