@@ -7,6 +7,7 @@
 import FormalVerification.Bridge
 import FormalVerification.BridgeRefinement
 import FormalVerification.DPOR
+import FormalVerification.Linearizability
 import FormalVerification.Lockstep
 import FormalVerification.ObservationalRefinement
 import FormalVerification.OpaqueDetection
