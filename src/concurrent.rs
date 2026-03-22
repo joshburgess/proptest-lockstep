@@ -593,9 +593,11 @@ where
     a.action.store_model_var(a.var_id, &*r_a2, &mut e2);
 
     // They commute if:
-    // 1. Both orderings produce bridge-equivalent results for each operation
-    let a_same = a.action.check_bridge(&*r_a1, &*r_a2).is_ok();
-    let b_same = b.action.check_bridge(&*r_b1, &*r_b2).is_ok();
+    // 1. Both orderings produce equivalent model results for each operation.
+    //    Uses check_model_bridge (observe_model on both sides) rather than
+    //    check_bridge (which would incorrectly apply observe_real to one side).
+    let a_same = a.action.check_model_bridge(&*r_a1, &*r_a2).is_ok();
+    let b_same = b.action.check_model_bridge(&*r_b1, &*r_b2).is_ok();
 
     // 2. The final model states are the same (catches "silent" state
     //    mutations that don't appear in return values).
