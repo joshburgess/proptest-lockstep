@@ -107,6 +107,21 @@
 //! - `bisim_observation_after_prefix`: observations remain equal
 //!   at every point along a trace
 //!
+//! ## Testing Completeness (proved in `TestingCompleteness.lean`)
+//!
+//! The contrapositive: any observable discrepancy between SUT and
+//! model WILL be detected at sufficient depth. No false negatives.
+//!
+//! Key theorems:
+//! - `testing_completeness`: if observations differ after some prefix,
+//!   `bounded_bisim` fails at depth `prefix.length + 1`
+//! - `bug_localization`: if bisim fails at depth n+1, some action
+//!   witnesses the failure (bridge check or successor bisim)
+//! - `immediate_bug`: bridge failure at current state → bisim fails
+//!   at depth 1
+//! - `testing_sound_and_complete`: the full biconditional combining
+//!   soundness and completeness
+//!
 //! # Soundness (proved in `Soundness.lean`)
 //!
 //! - `lockstep_test_sound`: runner passing on all traces → `bounded_bisim`
