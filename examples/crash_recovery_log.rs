@@ -23,6 +23,7 @@ use proptest::prelude::*;
 use proptest::strategy::BoxedStrategy;
 
 use proptest_lockstep::prelude::*;
+use proptest_lockstep::invariant::InvariantModel;
 use proptest_lockstep::crash_recovery::{CrashRecoveryModel, CrashRecoveryConfig};
 
 // ============================================================================
@@ -219,7 +220,19 @@ impl LockstepModel for WalLockstep {
 }
 
 // ============================================================================
-// CrashRecoveryModel
+// InvariantModel — shared state invariant
+// ============================================================================
+
+impl InvariantModel for WalLockstep {
+    fn invariant(state: &LogModel) -> bool {
+        // Invariant: log entries are never empty strings
+        // (our generators only produce non-empty strings)
+        state.entries.iter().all(|e| !e.is_empty())
+    }
+}
+
+// ============================================================================
+// CrashRecoveryModel — crash/recovery semantics
 // ============================================================================
 
 impl CrashRecoveryModel for WalLockstep {
@@ -238,12 +251,6 @@ impl CrashRecoveryModel for WalLockstep {
 
     fn sut_recover(sut: WriteAheadLog) -> WriteAheadLog {
         sut.recover()
-    }
-
-    fn invariant(state: &LogModel) -> bool {
-        // Invariant: log entries are never empty strings
-        // (our generators only produce non-empty strings)
-        state.entries.iter().all(|e| !e.is_empty())
     }
 }
 
