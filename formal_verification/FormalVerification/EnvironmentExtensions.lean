@@ -213,40 +213,62 @@ abbrev CrashSessionSystem.toSessionSystem (sys : CrashSessionSystem) :
   write_val := sys.write_val
 
 /--
-  Crash-session bisimulation: the system satisfies BOTH crash
-  bisimulation AND session bisimulation simultaneously. These are
-  orthogonal properties — crash-recovery ensures correctness after
-  crashes, while session consistency ensures per-session ordering
-  guarantees.
+  **Crash-session bisimulation** with proper history interaction:
+  after a crash, session histories reset to empty. This captures
+  the key invariant: a client reconnecting after crash gets a fresh
+  session with no prior write/read history.
+
+  Unlike the simple conjunction `crash_bisim ∧ session_bisim`, this
+  definition threads histories through the crash transition,
+  resetting them to `empty_histories` on recovery.
 -/
 def crash_session_bisim (sys : CrashSessionSystem)
-    [DecidableEq sys.Session] [DecidableEq sys.Key]
-    (n : Nat) (sm : sys.SM) (ss : sys.SS)
-    (hists : SessionHistories sys.Session sys.Key sys.Obs) : Prop :=
-  crash_bisim sys.toCrashRecoverySystem n sm ss
-  ∧ session_bisim sys.toSessionSystem n sm ss hists
+    [DecidableEq sys.Session] [DecidableEq sys.Key] :
+    Nat → sys.SM → sys.SS →
+    SessionHistories sys.Session sys.Key sys.Obs → Prop
+  | 0, _, _, _ => True
+  | n + 1, sm, ss, hists =>
+    -- Invariant holds
+    sys.invariant sm
+    -- Normal actions: RYW + bridge + recursion with updated histories
+    ∧ (∀ (a : sys.ActionIdx),
+        (match sys.session_of a, sys.read_key a, sys.sut_read_obs a ss with
+          | some s, some k, some obs => read_your_writes (hists s) k obs
+          | _, _, _ => True)
+        ∧ bridge_equiv (sys.bridge a)
+          (sys.step_sut a ss).2 (sys.step_model a sm).2
+        ∧ crash_session_bisim sys n
+          (sys.step_model a sm).1 (sys.step_sut a ss).1
+          (match sys.session_of a, sys.write_key a, sys.write_val a with
+            | some s, some k, some v =>
+              fun s' => if s' = s then update_write (hists s) k v else hists s'
+            | _, _, _ => hists))
+    -- CRASH: recovered states with EMPTY histories (fresh session)
+    ∧ crash_session_bisim sys n
+        (sys.model_recover (sys.checkpoint sm))
+        (sys.sut_recover ss)
+        (empty_histories sys.Session sys.Key sys.Obs)
 
 /--
-  **Crash-session implies crash**: projection to crash bisimulation.
+  **Crash-session implies crash**: forgetting session histories
+  gives the underlying crash bisimulation.
 -/
 theorem crash_session_implies_crash (sys : CrashSessionSystem)
     [DecidableEq sys.Session] [DecidableEq sys.Key]
     (n : Nat) (sm : sys.SM) (ss : sys.SS)
     (hists : SessionHistories sys.Session sys.Key sys.Obs)
     (h : crash_session_bisim sys n sm ss hists) :
-    crash_bisim sys.toCrashRecoverySystem n sm ss :=
-  h.1
-
-/--
-  **Crash-session implies session**: projection to session bisimulation.
--/
-theorem crash_session_implies_session (sys : CrashSessionSystem)
-    [DecidableEq sys.Session] [DecidableEq sys.Key]
-    (n : Nat) (sm : sys.SM) (ss : sys.SS)
-    (hists : SessionHistories sys.Session sys.Key sys.Obs)
-    (h : crash_session_bisim sys n sm ss hists) :
-    session_bisim sys.toSessionSystem n sm ss hists :=
-  h.2
+    crash_bisim sys.toCrashRecoverySystem n sm ss := by
+  induction n generalizing sm ss hists with
+  | zero => trivial
+  | succ k ih =>
+    simp only [crash_session_bisim] at h
+    obtain ⟨hinv, hactions, hcrash⟩ := h
+    simp only [crash_bisim]
+    refine ⟨hinv, ?_, ih _ _ _ hcrash⟩
+    intro a
+    have ha := hactions a
+    exact ⟨ha.2.1, ih _ _ _ ha.2.2⟩
 
 /--
   **Crash-session implies bounded**: crash-session bisimulation
@@ -258,4 +280,5 @@ theorem crash_session_implies_bounded (sys : CrashSessionSystem)
     (hists : SessionHistories sys.Session sys.Key sys.Obs)
     (h : crash_session_bisim sys n sm ss hists) :
     bounded_bisim sys.toLockstepSystem n sm ss :=
-  crash_bisim_implies_bounded sys.toCrashRecoverySystem n sm ss h.1
+  crash_bisim_implies_bounded sys.toCrashRecoverySystem n sm ss
+    (crash_session_implies_crash sys n sm ss hists h)
