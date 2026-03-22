@@ -26,6 +26,7 @@ import FormalVerification.BridgeRefinement
   the bridge lifts component equivalences correctly.
 -/
 structure CertifiedBridge (R M : Type) where
+  private mk ::
   bridge : Bridge R M
 
 -- =========================================================================
