@@ -30,6 +30,8 @@ crossbeam-queue = "0.3"
 scc = "2"
 dashmap = "6"
 evmap = "10"
+crdts = "7"
+num-traits = "0.2"
 
 [[bench]]
 name = "linearizability"
