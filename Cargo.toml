@@ -36,6 +36,10 @@ name = "linearizability"
 harness = false
 required-features = ["concurrent"]
 
+[[bench]]
+name = "end_to_end"
+harness = false
+
 [features]
 default = ["derive"]
 derive = ["dep:proptest-lockstep-derive"]
