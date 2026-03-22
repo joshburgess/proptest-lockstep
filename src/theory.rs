@@ -373,6 +373,18 @@
 //! This closes the TypedEnv gap identified by reviewers: the formal
 //! guarantee now covers environment-threaded execution.
 //!
+//! # Certificate Hash Verification (proved in `CertificateHash.lean`)
+//!
+//! Implements FNV-1a hashing in Lean and proves the hash values
+//! match the constants in the Rust `BridgeCertificate`. This closes
+//! the Rust-Lean certificate gap — hashes are verified on both sides.
+//!
+//! Key theorems:
+//! - `transparent_hash_verified`: Lean hash = `0xd0e945b97c0c46d1`
+//! - `opaque_hash_verified`: Lean hash = `0x66d852e3c020e79e`
+//! - `result/tuple/option/vec/unit_bridge_hash_verified`: all match
+//! - `all_hashes_distinct`: no two bridge types share a hash
+//!
 //! # Projection Chains (proved in `Projection.lean`)
 //!
 //! Formalizes the `Op` DSL — typed projection chains for decomposing
