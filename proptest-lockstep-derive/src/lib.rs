@@ -1,5 +1,7 @@
 extern crate proc_macro;
 
+use std::collections::HashMap;
+
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote};
@@ -34,6 +36,7 @@ fn parse_action_attrs(item: &ItemStruct) -> ActionDef {
     let mut real_return = None;
     let mut model_return = None;
     let mut bridge = None;
+    let mut opaque_types = None;
     let mut uses = Vec::new();
     let mut other_attrs = Vec::new();
 
@@ -51,15 +54,19 @@ fn parse_action_attrs(item: &ItemStruct) -> ActionDef {
 
                 if remaining.starts_with("real_return") {
                     let (val, rest) = extract_string_value(remaining, "real_return");
-                    real_return = Some(parse_type_str(&val));
+                    real_return = Some(val);
                     remaining = rest;
                 } else if remaining.starts_with("model_return") {
                     let (val, rest) = extract_string_value(remaining, "model_return");
-                    model_return = Some(parse_type_str(&val));
+                    model_return = Some(val);
                     remaining = rest;
                 } else if remaining.starts_with("bridge") {
                     let (val, rest) = extract_string_value(remaining, "bridge");
                     bridge = Some(parse_type_str(&val));
+                    remaining = rest;
+                } else if remaining.starts_with("opaque_types") {
+                    let (val, rest) = extract_brace_value(remaining, "opaque_types");
+                    opaque_types = Some(parse_opaque_types(&val));
                     remaining = rest;
                 } else if remaining.starts_with("uses") {
                     let (val, rest) = extract_bracket_value(remaining, "uses");
@@ -73,7 +80,8 @@ fn parse_action_attrs(item: &ItemStruct) -> ActionDef {
                 } else {
                     let unknown = remaining.split([',', '=']).next().unwrap_or(remaining).trim();
                     panic!(
-                        "Unknown key `{}` in #[action] for `{}`. Expected: real_return, model_return, bridge, uses",
+                        "Unknown key `{}` in #[action] for `{}`. \
+                         Expected: real_return, model_return, bridge, opaque_types, uses",
                         unknown, item.ident
                     );
                 }
@@ -83,22 +91,31 @@ fn parse_action_attrs(item: &ItemStruct) -> ActionDef {
         }
     }
 
-    let real_ret = real_return.expect(&format!(
+    let real_return_str = real_return.expect(&format!(
         "Missing `real_return` in #[action] for `{}`",
         item.ident
     ));
+    let real_ret = parse_type_str(&real_return_str);
 
     // model_return defaults to real_return when omitted
-    let model_ret = model_return.unwrap_or_else(|| real_ret.clone());
+    let model_return_str = model_return.unwrap_or_else(|| real_return_str.clone());
+    let model_ret = parse_type_str(&model_return_str);
+
+    // Derive bridge if not explicitly provided
+    let bridge = bridge.unwrap_or_else(|| {
+        let opaques = opaque_types.unwrap_or_default();
+        let real_ty: syn::Type = syn::parse_str(&real_return_str)
+            .unwrap_or_else(|e| panic!("Failed to parse real_return `{real_return_str}`: {e}"));
+        let model_ty: syn::Type = syn::parse_str(&model_return_str)
+            .unwrap_or_else(|e| panic!("Failed to parse model_return `{model_return_str}`: {e}"));
+        derive_bridge(&real_ty, &model_ty, &opaques, &item.ident.to_string())
+    });
 
     ActionDef {
         ident: item.ident.clone(),
         real_return: real_ret,
         model_return: model_ret,
-        bridge: bridge.expect(&format!(
-            "Missing `bridge` in #[action] for `{}`",
-            item.ident
-        )),
+        bridge,
         uses,
         fields: item.fields.clone(),
         other_attrs,
@@ -142,6 +159,191 @@ fn extract_bracket_value<'a>(input: &'a str, key: &str) -> (String, &'a str) {
     } else {
         panic!("Unclosed bracket in {key}");
     }
+}
+
+fn extract_brace_value<'a>(input: &'a str, key: &str) -> (String, &'a str) {
+    let rest = &input[key.len()..];
+    let rest = rest.trim_start();
+    let rest = rest.strip_prefix('=').expect("Expected '=' after key");
+    let rest = rest.trim_start();
+    let rest = rest.strip_prefix('{').expect("Expected '{' after '='");
+    let mut depth = 1;
+    let mut end = 0;
+    for (i, c) in rest.char_indices() {
+        match c {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    end = i;
+                    break;
+                }
+            }
+            _ => {}
+        }
+    }
+    let value = rest[..end].to_string();
+    let remaining = &rest[end + 1..];
+    (value, remaining)
+}
+
+fn parse_opaque_types(s: &str) -> HashMap<String, String> {
+    let mut map = HashMap::new();
+    for pair in s.split(',') {
+        let pair = pair.trim();
+        if pair.is_empty() {
+            continue;
+        }
+        let parts: Vec<&str> = pair.split("=>").collect();
+        if parts.len() != 2 {
+            panic!(
+                "Invalid opaque_types entry `{pair}`. Expected `RealType => ModelType`"
+            );
+        }
+        map.insert(parts[0].trim().to_string(), parts[1].trim().to_string());
+    }
+    map
+}
+
+// ===========================================================================
+// Polynomial bridge derivation
+// ===========================================================================
+
+/// Derive the bridge type from `real_return` and `model_return` types,
+/// walking both type ASTs in lockstep. This is the polynomial functor
+/// decomposition: each algebraic data type's bridge is derived
+/// mechanically from its structure.
+fn derive_bridge(
+    real: &syn::Type,
+    model: &syn::Type,
+    opaques: &HashMap<String, String>,
+    action_name: &str,
+) -> TokenStream2 {
+    let real_str = normalize_type(real);
+    let model_str = normalize_type(model);
+
+    // Types identical → Transparent
+    if real_str == model_str {
+        return if real_str == "()" {
+            quote!(UnitBridge)
+        } else {
+            quote!(Transparent<#real>)
+        };
+    }
+
+    // Check opaque types mapping
+    if let Some(expected_model) = opaques.get(&real_str) {
+        if *expected_model == model_str {
+            return quote!(Opaque<#real, #model>);
+        }
+    }
+
+    // Try to decompose structurally
+    match (real, model) {
+        // Result<A, B> / Result<A', B'>
+        (syn::Type::Path(rp), syn::Type::Path(mp))
+            if path_ident(rp) == "Result" && path_ident(mp) == "Result" =>
+        {
+            let r_args = path_generic_args(rp);
+            let m_args = path_generic_args(mp);
+            if r_args.len() == 2 && m_args.len() == 2 {
+                let ok_bridge = derive_bridge(&r_args[0], &m_args[0], opaques, action_name);
+                let err_bridge = derive_bridge(&r_args[1], &m_args[1], opaques, action_name);
+                return quote!(ResultBridge<#ok_bridge, #err_bridge>);
+            }
+        }
+        // Option<A> / Option<A'>
+        (syn::Type::Path(rp), syn::Type::Path(mp))
+            if path_ident(rp) == "Option" && path_ident(mp) == "Option" =>
+        {
+            let r_args = path_generic_args(rp);
+            let m_args = path_generic_args(mp);
+            if r_args.len() == 1 && m_args.len() == 1 {
+                let inner = derive_bridge(&r_args[0], &m_args[0], opaques, action_name);
+                return quote!(OptionBridge<#inner>);
+            }
+        }
+        // Vec<A> / Vec<A'>
+        (syn::Type::Path(rp), syn::Type::Path(mp))
+            if path_ident(rp) == "Vec" && path_ident(mp) == "Vec" =>
+        {
+            let r_args = path_generic_args(rp);
+            let m_args = path_generic_args(mp);
+            if r_args.len() == 1 && m_args.len() == 1 {
+                let inner = derive_bridge(&r_args[0], &m_args[0], opaques, action_name);
+                return quote!(VecBridge<#inner>);
+            }
+        }
+        // (A, B) / (A', B') — tuples
+        (syn::Type::Tuple(rt), syn::Type::Tuple(mt))
+            if rt.elems.len() == mt.elems.len() =>
+        {
+            let n = rt.elems.len();
+            if n == 0 {
+                return quote!(UnitBridge);
+            }
+            let bridges: Vec<_> = rt.elems.iter().zip(mt.elems.iter())
+                .map(|(r, m)| derive_bridge(r, m, opaques, action_name))
+                .collect();
+            if n == 2 {
+                let (a, b) = (&bridges[0], &bridges[1]);
+                return quote!(TupleBridge<#a, #b>);
+            } else if n == 3 {
+                let (a, b, c) = (&bridges[0], &bridges[1], &bridges[2]);
+                return quote!(Tuple3Bridge<#a, #b, #c>);
+            }
+            // For other arities, fall through to error
+        }
+        _ => {}
+    }
+
+    panic!(
+        "Cannot derive bridge for action `{action_name}`: \
+         real type `{real_str}` and model type `{model_str}` differ \
+         but no matching entry in `opaque_types`. \
+         Add `opaque_types = {{ {real_str} => {model_str} }}` or \
+         specify `bridge` explicitly."
+    );
+}
+
+/// Normalize a type to a canonical string for comparison.
+fn normalize_type(ty: &syn::Type) -> String {
+    quote!(#ty).to_string().replace(' ', "")
+}
+
+/// Extract the last segment identifier from a type path (e.g., "Result" from "std::result::Result").
+fn path_ident(tp: &syn::TypePath) -> String {
+    tp.path
+        .segments
+        .last()
+        .map(|s| s.ident.to_string())
+        .unwrap_or_default()
+}
+
+/// Extract generic type arguments from a type path.
+fn path_generic_args(tp: &syn::TypePath) -> Vec<syn::Type> {
+    tp.path
+        .segments
+        .last()
+        .and_then(|seg| {
+            if let syn::PathArguments::AngleBracketed(ref args) = seg.arguments {
+                Some(
+                    args.args
+                        .iter()
+                        .filter_map(|arg| {
+                            if let syn::GenericArgument::Type(ty) = arg {
+                                Some(ty.clone())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect(),
+                )
+            } else {
+                None
+            }
+        })
+        .unwrap_or_default()
 }
 
 // ===========================================================================
