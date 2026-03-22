@@ -1,17 +1,15 @@
 #![allow(dead_code)]
 //! Certified bridge synthesis demonstration.
 //!
-//! Shows that bridges produced by the proc macro's `derive_bridge`
-//! are certified — each bridge type implements `CertifiedLockstepBridge`,
-//! which links to the corresponding Lean soundness proof.
-//!
-//! The `verify_certified` function is a compile-time check: if a
-//! bridge type doesn't have a certificate, the code won't compile.
+//! Shows that bridges carry machine-verifiable certificates linking
+//! them to Lean soundness proofs. Each certificate contains the
+//! theorem name, Lean file path, construction method, and a
+//! structural hash for cross-checking.
 //!
 //! Run with: `cargo test --example certified_synthesis`
 
 use proptest_lockstep::bridge::*;
-use proptest_lockstep::certified::{CertifiedLockstepBridge, verify_certified};
+use proptest_lockstep::certified::{CertifiedLockstepBridge, verify_certified, BridgeCertificate};
 
 fn main() {
     println!("Run with `cargo test --example certified_synthesis`");
@@ -21,62 +19,86 @@ fn main() {
 mod tests {
     use super::*;
 
-    /// Transparent bridges are certified.
     #[test]
-    fn transparent_is_certified() {
-        let desc = verify_certified::<Transparent<String>>();
-        assert!(desc.contains("certified"));
+    fn transparent_certificate() {
+        let cert = verify_certified::<Transparent<String>>();
+        assert_eq!(cert.theorem, "certified_transparent_sound");
+        assert_eq!(cert.lean_file, "FormalVerification/CertifiedSynthesis.lean");
+        assert!(cert.construction.contains("transparent"));
+        assert_ne!(cert.structural_hash, 0);
     }
 
-    /// Opaque bridges are certified.
     #[test]
-    fn opaque_is_certified() {
-        let desc = verify_certified::<Opaque<u64, u32>>();
-        assert!(desc.contains("certified"));
+    fn opaque_certificate() {
+        let cert = verify_certified::<Opaque<u64, u32>>();
+        assert_eq!(cert.theorem, "certified_opaque_sound");
+        assert!(cert.construction.contains("opaque"));
     }
 
-    /// Composed bridges (ResultBridge<TupleBridge<Opaque, Transparent>, Transparent>)
-    /// are certified — the certification composes through the bridge algebra.
     #[test]
-    fn composed_bridge_is_certified() {
+    fn composed_bridge_certificate() {
         type MyBridge = ResultBridge<
             TupleBridge<Opaque<u64, u32>, Transparent<String>>,
             Transparent<bool>,
         >;
-        let desc = verify_certified::<MyBridge>();
-        assert!(desc.contains("certified"));
+        let cert = verify_certified::<MyBridge>();
+        assert_eq!(cert.theorem, "certified_sum_ok");
+        // Structural hash incorporates sub-bridge hashes
+        assert_ne!(cert.structural_hash, verify_certified::<Transparent<bool>>().structural_hash);
     }
 
-    /// OptionBridge is certified.
     #[test]
-    fn option_bridge_is_certified() {
-        let desc = verify_certified::<OptionBridge<Transparent<i32>>>();
-        assert!(desc.contains("certified"));
+    fn structural_hashes_are_unique() {
+        let transparent = verify_certified::<Transparent<String>>();
+        let opaque = verify_certified::<Opaque<u64, u32>>();
+        let option = verify_certified::<OptionBridge<Transparent<i32>>>();
+        let vec = verify_certified::<VecBridge<Transparent<i32>>>();
+        let unit = verify_certified::<UnitBridge>();
+
+        // All primitive hashes should differ
+        let hashes = vec![
+            transparent.structural_hash,
+            opaque.structural_hash,
+            option.structural_hash,
+            vec.structural_hash,
+            unit.structural_hash,
+        ];
+        for i in 0..hashes.len() {
+            for j in (i + 1)..hashes.len() {
+                assert_ne!(
+                    hashes[i], hashes[j],
+                    "Hash collision between bridge types"
+                );
+            }
+        }
     }
 
-    /// VecBridge is certified.
     #[test]
-    fn vec_bridge_is_certified() {
-        let desc = verify_certified::<VecBridge<Transparent<String>>>();
-        assert!(desc.contains("certified"));
+    fn composed_hash_differs_from_components() {
+        let result_cert = verify_certified::<ResultBridge<Transparent<i32>, Transparent<bool>>>();
+        let tuple_cert = verify_certified::<TupleBridge<Transparent<i32>, Transparent<bool>>>();
+
+        // ResultBridge and TupleBridge with same components should have different hashes
+        assert_ne!(result_cert.structural_hash, tuple_cert.structural_hash);
     }
 
-    /// UnitBridge is certified.
     #[test]
-    fn unit_bridge_is_certified() {
-        let desc = verify_certified::<UnitBridge>();
-        assert!(desc.contains("certified"));
+    fn certificate_display() {
+        let cert = verify_certified::<Transparent<String>>();
+        let display = format!("{}", cert);
+        assert!(display.contains("certified_transparent_sound"));
+        assert!(display.contains("CertifiedSynthesis.lean"));
+        assert!(display.contains("0x"));
     }
 
-    /// Print all synthesis descriptions.
     #[test]
-    fn print_certificates() {
-        println!("Transparent<String>: {}", Transparent::<String>::synthesis_description());
-        println!("Opaque<u64, u32>:    {}", Opaque::<u64, u32>::synthesis_description());
-        println!("ResultBridge:        {}", <ResultBridge<Transparent<i32>, Transparent<bool>>>::synthesis_description());
-        println!("TupleBridge:         {}", <TupleBridge<Transparent<i32>, Transparent<bool>>>::synthesis_description());
-        println!("OptionBridge:        {}", <OptionBridge<Transparent<i32>>>::synthesis_description());
-        println!("VecBridge:           {}", <VecBridge<Transparent<i32>>>::synthesis_description());
-        println!("UnitBridge:          {}", UnitBridge::synthesis_description());
+    fn print_all_certificates() {
+        println!("Transparent<String>:  {}", verify_certified::<Transparent<String>>());
+        println!("Opaque<u64, u32>:     {}", verify_certified::<Opaque<u64, u32>>());
+        println!("ResultBridge:         {}", verify_certified::<ResultBridge<Transparent<i32>, Transparent<bool>>>());
+        println!("TupleBridge:          {}", verify_certified::<TupleBridge<Transparent<i32>, Transparent<bool>>>());
+        println!("OptionBridge:         {}", verify_certified::<OptionBridge<Transparent<i32>>>());
+        println!("VecBridge:            {}", verify_certified::<VecBridge<Transparent<i32>>>());
+        println!("UnitBridge:           {}", verify_certified::<UnitBridge>());
     }
 }
