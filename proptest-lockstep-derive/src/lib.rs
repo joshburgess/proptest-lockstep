@@ -699,6 +699,27 @@ fn gen_any_action(
         }
     });
 
+    let check_model_bridge_arms = actions.iter().map(|a| {
+        let ident = &a.ident;
+        let model_ret = &a.model_return;
+        let bridge = &a.bridge;
+        quote! {
+            #any_name::#ident(_) => {
+                let m1 = m1.downcast_ref::<#model_ret>()
+                    .unwrap_or_else(|| panic!(
+                        "check_model_bridge({}): m1 downcast to {} failed",
+                        stringify!(#ident), stringify!(#model_ret)
+                    ));
+                let m2 = m2.downcast_ref::<#model_ret>()
+                    .unwrap_or_else(|| panic!(
+                        "check_model_bridge({}): m2 downcast to {} failed",
+                        stringify!(#ident), stringify!(#model_ret)
+                    ));
+                <#bridge as LockstepBridge>::check_model(m1, m2)
+            }
+        }
+    });
+
     let store_model_arms = actions.iter().map(|a| {
         let ident = &a.ident;
         let model_ret = &a.model_return;
@@ -756,6 +777,14 @@ fn gen_any_action(
                 sut_result: &dyn std::any::Any,
             ) -> Result<(), String> {
                 match self { #(#check_bridge_arms),* }
+            }
+
+            fn check_model_bridge(
+                &self,
+                m1: &dyn std::any::Any,
+                m2: &dyn std::any::Any,
+            ) -> Result<(), String> {
+                match self { #(#check_model_bridge_arms),* }
             }
 
             fn store_model_var(

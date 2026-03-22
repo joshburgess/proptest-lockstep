@@ -43,18 +43,6 @@ theorem testing_completeness (sys : LockstepSystem)
   exact hbug (observational_refinement sys (pre.length + 1) sm ss
     hbisim pre a (by omega))
 
-/--
-  **Failure propagation**: if a bug exists at depth k, the runner
-  will fail on any trace of length ≥ k that reaches the buggy state.
-  Testing at greater depth never misses a bug found at lesser depth.
--/
-theorem bug_detected_at_all_greater_depths (sys : LockstepSystem)
-    (sm : sys.SM) (ss : sys.SS) (n : Nat)
-    (hfail : ¬ bounded_bisim sys n sm ss)
-    (m : Nat) (hge : n ≤ m) :
-    ¬ bounded_bisim sys m sm ss :=
-  failure_propagates_up sys sm ss n m hge hfail
-
 -- =========================================================================
 -- Bug localization
 -- =========================================================================
@@ -64,6 +52,12 @@ theorem bug_detected_at_all_greater_depths (sys : LockstepSystem)
   then either the bridge check fails at the current state for some
   action, or the bisimulation fails at depth n at some successor
   state. This gives a way to localize where the bug manifests.
+
+  Note: this theorem uses classical logic (`Classical.byContradiction`)
+  because extracting an existential witness from `¬∀` requires excluded
+  middle when `ActionIdx` is not assumed finite. The bridge conjunct
+  IS decidable (via `bridge_equiv_decidable`), but `bounded_bisim` at
+  the successor may not be.
 -/
 theorem bug_localization (sys : LockstepSystem)
     (sm : sys.SM) (ss : sys.SS) (n : Nat)
@@ -82,8 +76,14 @@ theorem bug_localization (sys : LockstepSystem)
         ∨ ¬ bounded_bisim sys n
           (sys.step_model a sm).1 (sys.step_sut a ss).1) :=
         fun habs => hall ⟨a, habs⟩
-      exact ⟨Classical.byContradiction fun h => hna (Or.inl h),
-             Classical.byContradiction fun h => hna (Or.inr h)⟩)
+      -- Use decidability of bridge_equiv for the first conjunct
+      have hbridge : bridge_equiv (sys.bridge a)
+          (sys.step_sut a ss).2 (sys.step_model a sm).2 := by
+        exact Decidable.byContradiction fun h => hna (Or.inl h)
+      have hbisim : bounded_bisim sys n
+          (sys.step_model a sm).1 (sys.step_sut a ss).1 := by
+        exact Classical.byContradiction fun h => hna (Or.inr h)
+      exact ⟨hbridge, hbisim⟩)
 
 /--
   **Immediate bug**: if the bridge check fails at the current state,
@@ -98,28 +98,7 @@ theorem immediate_bug (sys : LockstepSystem)
   simp only [bounded_bisim] at hbisim
   exact hfail (hbisim a).1
 
--- =========================================================================
--- The full testing guarantee
--- =========================================================================
-
-/--
-  **The full testing guarantee**: lockstep testing is both sound and
-  complete with respect to observational refinement.
-
-  - **Sound**: if the runner passes on all traces of length n, the
-    SUT observationally refines the model at depth n.
-  - **Complete**: if the SUT does NOT observationally refine the model
-    (some observation differs at depth ≤ n), the runner will fail on
-    some trace of length n.
-
-  Together: bounded_bisim is the exact characterization of
-  "observationally indistinguishable up to depth n."
--/
-theorem testing_sound_and_complete (sys : LockstepSystem)
-    (n : Nat) (sm : sys.SM) (ss : sys.SS) :
-    bounded_bisim sys n sm ss
-    ↔ (∀ (pre : List sys.ActionIdx) (a : sys.ActionIdx),
-        pre.length + 1 ≤ n →
-        sut_observation sys a (sut_state_after sys pre ss)
-        = model_observation sys a (model_state_after sys pre sm)) :=
-  observational_refinement_equiv sys n sm ss
+-- The full testing guarantee (soundness + completeness) is the
+-- biconditional `observational_refinement_equiv` in
+-- ObservationalRefinement.lean:
+--   bounded_bisim n sm ss ↔ ∀ pre a, |pre|+1 ≤ n → obs_sut = obs_model

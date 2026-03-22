@@ -34,6 +34,27 @@ pub trait LockstepBridge {
             ))
         }
     }
+
+    /// Compare two model values through the bridge, using `observe_model`
+    /// on both sides. This is the correct comparison for DPOR commutativity
+    /// checks, where both values are model results (not a real/model pair).
+    ///
+    /// For symmetric bridges (where `observe_real == observe_model`), this
+    /// gives the same result as `check`. For asymmetric bridges, this avoids
+    /// the imprecision of passing two model results to `check` (which would
+    /// apply `observe_real` to the first and `observe_model` to the second).
+    fn check_model(m1: &Self::Model, m2: &Self::Model) -> Result<(), String> {
+        let obs1 = Self::observe_model(m1);
+        let obs2 = Self::observe_model(m2);
+        if obs1 == obs2 {
+            Ok(())
+        } else {
+            Err(format!(
+                "  Model observed 1: {:?}\n  Model observed 2: {:?}",
+                obs1, obs2
+            ))
+        }
+    }
 }
 
 // ===========================================================================
