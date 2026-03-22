@@ -25,6 +25,12 @@
 //! lifted bridge. Sum bridge variant mismatches are detected in both
 //! directions (`sum_variant_mismatch_lr`, `sum_variant_mismatch_rl`).
 //!
+//! Bridge equivalence is **decidable** (`bridge_equiv_decidable`):
+//! every bridge carries `DecidableEq` on its `Observed` type, so
+//! `bridge_equiv` can be computed. This connects the Lean `Prop`-level
+//! proofs to the Rust `check_bridge` function, which returns
+//! `Result<(), String>`.
+//!
 //! ## Bridge Refinement Ordering (proved in `BridgeRefinement.lean`)
 //!
 //! Bridges form a preorder under refinement (`bridge_refines`): B1
@@ -33,8 +39,9 @@
 //! - `transparent_refines_uniform`: transparent refines any bridge
 //!   with uniform observation functions (identity is finest)
 //! - `refines_refl`, `refines_trans`: preorder structure
-//! - `sum_refines`, `prod_refines`, `option_refines`: lifts are
-//!   monotone — finer components produce finer composite bridges
+//! - `sum_refines`, `prod_refines`, `option_refines`, `list_refines`:
+//!   lifts are monotone — finer components produce finer composite
+//!   bridges
 //! - `refines_strengthen_bisim`: replacing bridges with finer ones
 //!   preserves bounded bisimulation (finer observation = stronger
 //!   guarantee)
