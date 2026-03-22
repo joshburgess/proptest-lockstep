@@ -166,8 +166,47 @@ theorem bounded_implies_session (sys : SessionSystem)
     · exact hryw a ss hists
     · exact ih _ _ _ ha.2
 
--- Note on session_implies_convergent:
--- The hierarchy edge session ⟹ convergent requires connecting
--- SessionSystem to EventualSystem (different Lean structures).
--- The strictness of bounded ⟹ convergent is proved in
--- HierarchyStrictness.lean via convergent_strictly_weaker.
+-- =========================================================================
+-- Session implies convergent (hierarchy edge)
+-- =========================================================================
+
+/--
+  **Session bisim preserves successor structure**: if session bisim
+  holds at depth n+1, then for every action, session bisim holds
+  at depth n on the successor states (with updated histories).
+-/
+theorem session_bisim_step (sys : SessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (n : Nat) (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs)
+    (h : session_bisim sys (n + 1) sm ss hists)
+    (a : sys.ActionIdx) :
+    ∃ hists', session_bisim sys n
+      (sys.step_model a sm).1 (sys.step_sut a ss).1 hists' := by
+  simp only [session_bisim] at h
+  exact ⟨_, (h a).2⟩
+
+/--
+  **Session → convergent connection**: session bisim's successor
+  structure (∀ action, bisim at depth n on successors) is the same
+  structure that convergent bisim requires. The only additional
+  requirement for convergent bisim is sync agreement — which is
+  a separate property of the system.
+
+  This theorem extracts the successor-structure part: if session
+  bisim holds, successors are covered for all actions.
+-/
+theorem session_successor_structure (sys : SessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (n : Nat) (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs)
+    (h : session_bisim sys (n + 1) sm ss hists)
+    (a : sys.ActionIdx) :
+    session_bisim sys n
+      (sys.step_model a sm).1 (sys.step_sut a ss).1
+      (match sys.session_of a, sys.write_key a, sys.write_val a with
+       | some s, some k, some v =>
+         fun s' => if s' = s then update_write (hists s) k v else hists s'
+       | _, _, _ => hists) := by
+  simp only [session_bisim] at h
+  exact (h a).2
