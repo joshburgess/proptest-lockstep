@@ -6,6 +6,7 @@
 
 import FormalVerification.Bridge
 import FormalVerification.BridgeRefinement
+import FormalVerification.CommutativitySpec
 import FormalVerification.CrashRecovery
 import FormalVerification.Invariant
 import FormalVerification.DPOR
