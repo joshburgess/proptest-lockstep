@@ -110,6 +110,22 @@
 //!
 //! # DPOR Soundness (proved in `DPOR.lean`)
 //!
+//! ## Linearizability (proved in `Linearizability.lean`)
+//!
+//! A concurrent execution is linearizable if there exists a sequential
+//! ordering (permutation) of the operations such that the model produces
+//! bridge-equivalent results at each step (`is_linearizable`).
+//!
+//! Key theorems:
+//! - `is_linearizable`: the linearizability predicate
+//! - `linearizability_perm_invariant`: linearizability depends only on
+//!   the multiset of operations, not their listing order
+//! - `swap_preserves_linearizability`: swapping adjacent records
+//!   preserves linearizability
+//! - `single_op_linearizable_iff`: single-operation linearizability
+//!   reduces to a bridge check
+//! - `not_linearizable_iff`: characterization of non-linearizability
+//!
 //! The linearizability checker uses dynamic partial-order reduction to
 //! prune redundant interleavings. Two operations commute at a model
 //! state if executing them in either order yields the same per-action
