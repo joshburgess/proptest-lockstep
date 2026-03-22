@@ -13,6 +13,7 @@ pub mod contracts;
 pub mod coverage;
 pub mod invariant;
 pub mod certified;
+pub mod classify;
 pub mod commutativity;
 pub mod compositional;
 pub mod crash_recovery;
@@ -40,7 +41,7 @@ pub mod prelude {
     pub use crate::model::LockstepModel;
     pub use crate::op::{Op, OpComp, OpErr, OpFst, OpId, OpIndex, OpOk, OpSnd, OpSome};
     pub use crate::phase::{ConVar, Concrete, Phase, SymVar, Symbolic};
-    pub use crate::runner::{run_lockstep_test, run_lockstep_test_with_config, LockstepRef, LockstepSut};
+    pub use crate::runner::{run_lockstep_test, run_lockstep_test_with_config, run_lockstep_test_verbose, LockstepRef, LockstepSut};
     pub use crate::witness::Is;
 }
 

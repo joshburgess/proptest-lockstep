@@ -179,3 +179,66 @@ pub fn run_lockstep_test_with_config<M: LockstepModel>(
         );
     });
 }
+
+/// Run a lockstep test with automatic trace minimization on failure.
+///
+/// Like `run_lockstep_test`, but when a mismatch is found, automatically
+/// runs bisimulation-guided shrinking to produce a minimal counterexample.
+/// The minimized trace is printed to stderr before panicking.
+pub fn run_lockstep_test_verbose<M: LockstepModel>(
+    size: impl Into<proptest::collection::SizeRange>,
+) {
+    use crate::shrinking::{find_failure_depth, minimize_and_report};
+
+    let size = size.into();
+    let config = proptest::test_runner::Config::default();
+
+    proptest::proptest!(config, |((_initial_state, transitions, _seen_counter) in
+        <LockstepRef<M> as ReferenceStateMachine>::sequential_strategy(size))| {
+
+        let mut model_state = M::init_model();
+        let mut sut = M::init_sut();
+        let mut model_env = TypedEnv::new();
+        let mut real_env = TypedEnv::new();
+        let mut next_var_id: usize = 0;
+
+        let mut trace: Vec<Box<dyn AnyAction>> = Vec::new();
+
+        for transition in &transitions {
+            trace.push(dyn_clone::clone_box(transition.as_ref()));
+
+            let model_result = M::step_model(
+                &mut model_state,
+                transition.as_ref(),
+                &model_env,
+            );
+            let sut_result = M::step_sut(
+                &mut sut,
+                transition.as_ref(),
+                &real_env,
+            );
+
+            if let Err(msg) = transition.check_bridge(&*model_result, &*sut_result) {
+                // Mismatch found — minimize and report
+                eprintln!("\n=== Lockstep mismatch detected ===");
+                eprintln!("Action: {:?}", transition);
+                eprintln!("{}", msg);
+                eprintln!();
+
+                if let Some(_) = find_failure_depth::<M>(&trace) {
+                    eprintln!("=== Bisimulation-guided shrinking ===");
+                    let _ = minimize_and_report::<M>(&trace);
+                }
+
+                panic!(
+                    "Lockstep mismatch!\n  Action: {:?}\n{}",
+                    transition, msg
+                );
+            }
+
+            transition.store_model_var(next_var_id, &*model_result, &mut model_env);
+            transition.store_sut_var(next_var_id, &*sut_result, &mut real_env);
+            next_var_id += 1;
+        }
+    });
+}

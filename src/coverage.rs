@@ -23,14 +23,11 @@
 //! through the model (cheap: pure clone), and selects the one that
 //! lands in the most novel coverage bucket.
 
-use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
 
 use proptest_state_machine::ReferenceStateMachine;
 
-use crate::action::AnyAction;
 use crate::env::TypedEnv;
 use crate::model::LockstepModel;
 use crate::runner::LockstepRef;
