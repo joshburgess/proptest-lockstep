@@ -178,6 +178,38 @@ theorem option_refines
     unfold bridge_equiv optionBridge at hequiv
     simp at hequiv
 
+/--
+  **List lift is monotone**: if the inner bridge refines, then
+  list bridge equivalence under b1 implies element-wise equivalence
+  under b2.
+-/
+theorem list_refines
+    (b1 b2 : Bridge R M)
+    [DecidableEq b1.Observed] [DecidableEq b2.Observed]
+    (href : bridge_refines b1 b2) :
+    ∀ (rs : List R) (ms : List M),
+    bridge_equiv (listBridge b1) rs ms →
+    bridge_equiv (listBridge b2) rs ms := by
+  intro rs
+  induction rs with
+  | nil =>
+    intro ms hequiv
+    unfold bridge_equiv listBridge at hequiv ⊢
+    simp at hequiv ⊢
+    match ms with
+    | [] => rfl
+    | _ :: _ => simp at hequiv
+  | cons r rest ih =>
+    intro ms hequiv
+    match ms with
+    | [] =>
+      unfold bridge_equiv listBridge at hequiv
+      simp at hequiv
+    | m :: ms' =>
+      unfold bridge_equiv listBridge at hequiv ⊢
+      simp [List.map] at hequiv ⊢
+      exact ⟨href r m hequiv.1, ih ms' hequiv.2⟩
+
 -- =========================================================================
 -- Refinement and bisimulation
 -- =========================================================================

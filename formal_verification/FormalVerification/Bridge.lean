@@ -196,3 +196,35 @@ theorem prod_equiv_iff (bA : Bridge RA MA) (bB : Bridge RB MB)
     ↔ (bridge_equiv bA ra ma ∧ bridge_equiv bB rb mb) := by
   unfold bridge_equiv prodBridge
   simp [Prod.mk.injEq]
+
+-- =========================================================================
+-- Decidability
+-- =========================================================================
+
+/--
+  Bridge equivalence is decidable. This connects the Lean `Prop`-level
+  `bridge_equiv` to the Rust `check_bridge` computation, which returns
+  `Result<(), String>`. The decidability comes from `DecidableEq` on
+  the `Observed` type, which every bridge carries.
+-/
+instance bridge_equiv_decidable (b : Bridge R M) (r : R) (m : M) :
+    Decidable (bridge_equiv b r m) := by
+  unfold bridge_equiv
+  exact b.dec_eq _ _
+
+/--
+  Bridge equivalence is either true or false — it can be computed.
+  This justifies the Rust `check_bridge` returning `Result<(), String>`:
+  the check is a total function, not a partial one.
+-/
+theorem bridge_equiv_or_not (b : Bridge R M) (r : R) (m : M) :
+    bridge_equiv b r m ∨ ¬ bridge_equiv b r m :=
+  (bridge_equiv_decidable b r m).em
+
+/--
+  Bridge non-equivalence: observations differ.
+-/
+theorem bridge_not_equiv (b : Bridge R M) (r : R) (m : M) :
+    ¬ bridge_equiv b r m ↔ b.observe_real r ≠ b.observe_model m := by
+  unfold bridge_equiv
+  exact Iff.rfl
