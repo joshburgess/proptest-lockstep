@@ -32,6 +32,7 @@ dashmap = "6"
 evmap = "10"
 crdts = "7"
 num-traits = "0.2"
+sled = "0.34"
 
 [[bench]]
 name = "linearizability"
