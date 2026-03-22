@@ -399,14 +399,59 @@
 //! - `proj_comp_preserves`: composed projections preserve bridge_equiv
 //!   (the fundamental GVar theorem — justifies `GVar::new(v, OpOk).then(OpFst)`)
 //!
-//! # What Is NOT Formalized
+//! # Scope and Limitations of the Formalization
 //!
-//! The Lean formalization covers the bridge algebra, bisimulation
-//! (with and without environments), runner correspondence, DPOR,
-//! linearizability, opaque detection, preconditions, crash-recovery,
-//! eventual/session consistency, compositional bisimulation, effect
-//! lattice, certified synthesis, and projection chains. It does
-//! not formalize:
+//! ## What IS formalized
+//!
+//! The Lean formalization (303 definitions, 29 files, zero `sorry`)
+//! covers: bridge algebra, bounded bisimulation, runner correspondence,
+//! observational refinement, DPOR soundness, linearizability, opaque
+//! handle detection, preconditions, crash-recovery bisimulation,
+//! eventual/session consistency, compositional bisimulation, tensor
+//! product, effect-indexed commutativity, certified bridge synthesis,
+//! projection chains, sleep set equivalence, monotonic reads, and
+//! crash-session composition.
+//!
+//! ## What IS NOT formalized
+//!
 //! - The proptest generation/shrinking machinery
 //! - GVar projection chain resolution (the `Op` DSL internals)
 //! - The probabilistic guarantee (how many test cases are needed)
+//!
+//! ## The Rust-Lean gap
+//!
+//! The formalization is a **specification verification**: Lean proves
+//! properties of abstract definitions (runner_passes, bounded_bisim,
+//! bridge_equiv) that are designed to mirror the Rust implementation.
+//! It is NOT a **code verification**: no Lean theorem directly
+//! constrains the Rust code.
+//!
+//! The gap is bridged by **shared structure**:
+//! - `runner_passes` in Lean mirrors `LockstepSut::apply` in Rust
+//! - `bridge_equiv` in Lean mirrors `LockstepBridge::check` in Rust
+//! - `bounded_bisim` in Lean mirrors the runner's recursive structure
+//! - `CertificateHash.lean` cross-verifies FNV-1a hashes between
+//!   Lean and Rust (`BridgeCertificate`)
+//!
+//! Specific gaps between Lean and Rust:
+//! - **Sampling vs exhaustive**: Lean's `runner_passes` quantifies
+//!   over ALL traces of length n. The Rust runner SAMPLES traces via
+//!   proptest strategies. A passing Rust test does not check all
+//!   traces — it provides probabilistic (not absolute) coverage.
+//! - **DecidableEq vs PartialEq**: Lean requires `DecidableEq` on
+//!   `Observed` types. Rust requires `PartialEq`, which is weaker
+//!   (not necessarily decidable, may have side effects).
+//! - **Proc macro**: The bridge derivation macro generates Rust code,
+//!   but no Lean theorem constrains the macro output. The certified
+//!   synthesis in Lean verifies the *algorithm*, not the *expansion*.
+//! - **TypedEnv**: Lean uses an abstract `Env` type. Rust uses
+//!   `Box<dyn Any + Send>` with runtime type checks. The type safety
+//!   of variable storage is not formally verified.
+//! - **GVar projections**: The `GVar<X,Y,O>` projection chains have
+//!   complex lifetime and type semantics not modeled in Lean.
+//!
+//! This gap is **intentional and honest**: formalizing Rust semantics
+//! in Lean would require embedding Rust's type system (cf. RustBelt),
+//! which is a separate research project. The formalization covers what
+//! a correct lockstep runner *must* satisfy; the Rust implementation
+//! provides evidence (not proof) that it does.
