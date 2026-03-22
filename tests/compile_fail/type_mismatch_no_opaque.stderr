@@ -1,0 +1,15 @@
+error: custom attribute panicked
+  --> tests/compile_fail/type_mismatch_no_opaque.rs:13:1
+   |
+13 | #[proptest_lockstep::lockstep_actions(state = Model)]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: message: Cannot derive bridge for action `Create`: real type `RealHandle` and model type `MockHandle` differ but no matching entry in `opaque_types`. Add `opaque_types = { RealHandle => MockHandle }` or specify `bridge` explicitly.
+
+warning: unused import: `proptest_lockstep::prelude::*`
+ --> tests/compile_fail/type_mismatch_no_opaque.rs:2:5
+  |
+2 | use proptest_lockstep::prelude::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
