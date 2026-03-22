@@ -9,6 +9,7 @@ pub mod runner;
 pub mod theory;
 pub mod witness;
 
+pub mod contracts;
 pub mod coverage;
 pub mod invariant;
 pub mod commutativity;
