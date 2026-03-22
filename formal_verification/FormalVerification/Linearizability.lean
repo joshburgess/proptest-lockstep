@@ -82,21 +82,6 @@ theorem linearizability_perm_invariant (sys : LockstepSystem)
   obtain ⟨perm, hp, hcheck⟩ := h
   exact ⟨perm, hp.trans hperm, hcheck⟩
 
--- =========================================================================
--- Single-branch linearizability
--- =========================================================================
-
-/--
-  A single-branch concurrent execution is always linearizable
-  if the linearization check passes — there's only one possible
-  ordering.
--/
-theorem single_branch_linearizable (sys : LockstepSystem)
-    (records : List (OpRecord sys)) (sm : sys.SM)
-    (h : linearization_check sys records sm) :
-    is_linearizable sys records sm :=
-  sequential_is_linearizable sys records sm h
-
 /--
   Linearizability of a single operation is equivalent to the
   bridge check passing.
@@ -121,6 +106,59 @@ theorem single_op_linearizable_iff (sys : LockstepSystem)
       exact hcheck.1
   · intro h
     exact ⟨[r], List.Perm.refl _, ⟨h, trivial⟩⟩
+
+-- =========================================================================
+-- Connection to bounded bisimulation
+-- =========================================================================
+
+/--
+  Record the SUT's execution of a trace: run each action on the SUT
+  and pair it with the observed result.
+-/
+def record_execution (sys : LockstepSystem) :
+    List sys.ActionIdx → sys.SS → List (OpRecord sys)
+  | [], _ => []
+  | a :: rest, ss =>
+    ⟨a, (sys.step_sut a ss).2⟩ :: record_execution sys rest (sys.step_sut a ss).1
+
+/--
+  **Bounded bisimulation implies linearizable execution**: if
+  bounded bisimulation holds at depth n, then recording the SUT's
+  execution of any trace of length ≤ n produces records that pass
+  linearization_check.
+
+  This connects the core `bounded_bisim` theory to the
+  linearizability formalization: sequential correctness
+  (bounded_bisim) implies that the SUT's observed behavior forms
+  a valid linearization against the model.
+-/
+theorem bounded_bisim_implies_linearizable (sys : LockstepSystem)
+    (n : Nat) (sm : sys.SM) (ss : sys.SS)
+    (h : bounded_bisim sys n sm ss)
+    (trace : List sys.ActionIdx) (hlen : trace.length ≤ n) :
+    linearization_check sys (record_execution sys trace ss) sm := by
+  induction trace generalizing sm ss n with
+  | nil => trivial
+  | cons a rest ih =>
+    match n, hlen with
+    | n' + 1, hlen' =>
+      simp only [record_execution, linearization_check]
+      simp only [bounded_bisim] at h
+      have ha := h a
+      exact ⟨ha.1, ih n' _ _ ha.2 (by simp at hlen'; omega)⟩
+
+/--
+  **Converse connection**: if linearization_check passes for
+  recorded operations, then the recorded execution is linearizable
+  (the identity permutation is a valid linearization).
+-/
+theorem linearization_check_is_linearizable (sys : LockstepSystem)
+    (trace : List sys.ActionIdx) (sm : sys.SM) (ss : sys.SS)
+    (n : Nat) (h : bounded_bisim sys n sm ss)
+    (hlen : trace.length ≤ n) :
+    is_linearizable sys (record_execution sys trace ss) sm :=
+  sequential_is_linearizable sys _ sm
+    (bounded_bisim_implies_linearizable sys n sm ss h trace hlen)
 
 -- =========================================================================
 -- Non-linearizability
