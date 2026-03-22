@@ -28,17 +28,6 @@ def is_regression (sys1 sys2 : LockstepSystem)
   bounded_bisim sys1 n sm1 ss1 ∧ ¬ bounded_bisim sys2 n sm2 ss2
 
 /--
-  **Regression detection is sound**: if there's a regression, then
-  there exists a depth at which the "before" system passes but the
-  "after" system fails.
--/
-theorem regression_witnessed (sys1 sys2 : LockstepSystem)
-    (n : Nat) (sm1 : sys1.SM) (ss1 : sys1.SS)
-    (sm2 : sys2.SM) (ss2 : sys2.SS)
-    (h : is_regression sys1 sys2 n sm1 ss1 sm2 ss2) :
-    bounded_bisim sys1 n sm1 ss1 ∧ ¬ bounded_bisim sys2 n sm2 ss2 := h
-
-/--
   **No regression at depth 0**: both systems trivially satisfy
   bounded_bisim at depth 0, so regression is impossible.
 -/

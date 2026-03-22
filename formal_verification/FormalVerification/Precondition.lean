@@ -181,3 +181,48 @@ theorem precond_bisim_step (psys : PreconditionedSystem)
         (psys.step_model a sm).1 (psys.step_sut a ss).1 := by
   simp only [precond_bisim] at h
   exact h a hpre
+
+-- =========================================================================
+-- Converse: bisimulation implies runner (on valid traces)
+-- =========================================================================
+
+/--
+  A trace is precondition-valid if the precondition holds for each
+  action at the model state reached by executing the prefix.
+-/
+def precond_trace_valid (psys : PreconditionedSystem) :
+    List psys.ActionIdx → psys.SM → Prop
+  | [], _ => True
+  | a :: rest, sm =>
+    psys.precond a sm
+    ∧ precond_trace_valid psys rest (psys.step_model a sm).1
+
+/--
+  **Converse**: if preconditioned bisimulation holds at depth n,
+  then the preconditioned runner passes on every precondition-valid
+  trace of length n.
+
+  This is the reverse direction of `precond_runner_implies_bisim`.
+  The precondition-validity requirement is necessary because
+  `precond_runner_passes` includes precondition checks — a trace
+  where preconditions don't hold would trivially fail the runner
+  regardless of bisimulation.
+-/
+theorem precond_bisim_implies_runner (psys : PreconditionedSystem)
+    (n : Nat) (sm : psys.SM) (ss : psys.SS)
+    (h : precond_bisim psys n sm ss)
+    (trace : List psys.ActionIdx) (hlen : trace.length = n)
+    (hvalid : precond_trace_valid psys trace sm) :
+    precond_runner_passes psys trace sm ss := by
+  induction n generalizing sm ss trace with
+  | zero =>
+    match trace, hlen with
+    | [], _ => trivial
+  | succ k ih =>
+    match trace, hlen with
+    | a :: rest, hlen' =>
+      simp only [precond_runner_passes, precond_trace_valid] at *
+      obtain ⟨hpre, hvalid_rest⟩ := hvalid
+      simp only [precond_bisim] at h
+      have ha := h a hpre
+      exact ⟨hpre, ha.1, ih _ _ ha.2 rest (by simp at hlen'; exact hlen') hvalid_rest⟩
