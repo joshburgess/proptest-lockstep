@@ -33,7 +33,10 @@ structure CrashRecoverySystem extends LockstepSystem where
   DS : Type                    -- durable state (survives crash)
   checkpoint : SM → DS         -- extract durable state from model
   model_recover : DS → SM      -- recover model from checkpoint
-  sut_recover : SS → SS        -- recover SUT from crash
+  sut_recover : SS → SS        -- recover SUT from crash (self-recovery from
+                               -- persisted state — the SUT doesn't have
+                               -- access to the model's checkpoint, so it
+                               -- must reconstruct from its own durable state)
   invariant : SM → Prop        -- state invariant (must hold at every step)
 
 -- =========================================================================

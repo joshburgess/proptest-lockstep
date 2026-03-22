@@ -145,3 +145,39 @@ theorem product_bisim_iff (sys1 sys2 : LockstepSystem)
            product_bisim_right sys1 sys2 n sm1 ss1 sm2 ss2 h⟩
   · intro ⟨h1, h2⟩
     exact compositional_bisim sys1 sys2 n sm1 ss1 sm2 ss2 h1 h2
+
+-- =========================================================================
+-- Monoidal structure: associativity and vacuous component
+-- =========================================================================
+
+/--
+  **Vacuous component**: if a system has no actions (`ActionIdx` is
+  empty), bounded bisimulation holds trivially at any depth.
+-/
+theorem empty_action_bisim (sys : LockstepSystem)
+    (hempty : sys.ActionIdx → False)
+    (n : Nat) (sm : sys.SM) (ss : sys.SS) :
+    bounded_bisim sys n sm ss := by
+  induction n generalizing sm ss with
+  | zero => trivial
+  | succ k ih =>
+    simp only [bounded_bisim]
+    intro a; exact (hempty a).elim
+
+/--
+  **Associativity**: product composition is associative up to
+  bisimulation. `(sys1 ⊗ sys2) ⊗ sys3 ↔ sys1 ⊗ (sys2 ⊗ sys3)`
+  at every depth.
+-/
+theorem product_assoc (sys1 sys2 sys3 : LockstepSystem)
+    (n : Nat)
+    (sm1 : sys1.SM) (ss1 : sys1.SS)
+    (sm2 : sys2.SM) (ss2 : sys2.SS)
+    (sm3 : sys3.SM) (ss3 : sys3.SS) :
+    bounded_bisim (product_system (product_system sys1 sys2) sys3)
+      n ((sm1, sm2), sm3) ((ss1, ss2), ss3)
+    ↔ bounded_bisim (product_system sys1 (product_system sys2 sys3))
+      n (sm1, (sm2, sm3)) (ss1, (ss2, ss3)) := by
+  rw [product_bisim_iff, product_bisim_iff, product_bisim_iff, product_bisim_iff]
+  exact ⟨fun ⟨⟨h1, h2⟩, h3⟩ => ⟨h1, h2, h3⟩,
+         fun ⟨h1, h2, h3⟩ => ⟨⟨h1, h2⟩, h3⟩⟩
