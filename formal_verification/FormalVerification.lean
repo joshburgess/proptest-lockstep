@@ -6,6 +6,7 @@
 
 import FormalVerification.Bridge
 import FormalVerification.BridgeRefinement
+import FormalVerification.CertifiedSynthesis
 import FormalVerification.Compositional
 import FormalVerification.CommutativitySpec
 import FormalVerification.CrashRecovery
