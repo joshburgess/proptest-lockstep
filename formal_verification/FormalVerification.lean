@@ -8,6 +8,7 @@ import FormalVerification.Bridge
 import FormalVerification.BridgeRefinement
 import FormalVerification.CertificateHash
 import FormalVerification.CertifiedSynthesis
+import FormalVerification.DeriveBridge
 import FormalVerification.Compositional
 import FormalVerification.CommutativitySpec
 import FormalVerification.CrashRecovery
