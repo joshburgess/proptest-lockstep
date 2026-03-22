@@ -222,6 +222,14 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Differential Bridge Testing (`src/differential.rs`)
+//!
+//! Meta-testing technique: tests the test oracles themselves.
+//! Compares a coarse bridge (user's) with a fine bridge (stricter)
+//! to detect hidden discrepancies. Based on `refines_strengthen_bisim`:
+//! a finer bridge gives a stronger guarantee, so if the fine bridge
+//! fails but the coarse passes, the coarse bridge is hiding a bug.
+//!
 //! # Session Consistency (proved in `SessionConsistency.lean`)
 //!
 //! Tests per-session ordering guarantees (Terry et al., 1994):
