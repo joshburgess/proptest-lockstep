@@ -31,15 +31,14 @@
 //! proofs to the Rust `check_bridge` function, which returns
 //! `Result<(), String>`.
 //!
-//! ## Derived Bridge Soundness (proved in `DerivedBridge.lean`)
+//! ## Derived Bridge Monotonicity (proved in `DerivedBridge.lean`)
 //!
-//! Formalizes the polynomial bridge derivation algorithm (the Lean
-//! counterpart of the proc macro's `derive_bridge` function).
-//! `BridgeSpec` describes how a bridge is constructed from primitives
-//! and lifts. The key results prove that each derivation step
-//! preserves bridge_equiv and that the derivation is monotone in
-//! refinement — replacing a component with a finer one produces a
-//! finer composite bridge.
+//! The polynomial bridge derivation is monotone in refinement:
+//! replacing a component bridge with a finer one produces a finer
+//! composite bridge (`derivation_monotone_sum_ok/err`,
+//! `derivation_monotone_prod`, `derivation_monotone_option`,
+//! `derivation_monotone_list`). Individual lift preservation is
+//! proved in `Bridge.lean` as the fundamental theorem.
 //!
 //! ## Bridge Refinement Ordering (proved in `BridgeRefinement.lean`)
 //!
@@ -129,8 +128,6 @@
 //!   witnesses the failure (bridge check or successor bisim)
 //! - `immediate_bug`: bridge failure at current state → bisim fails
 //!   at depth 1
-//! - `testing_sound_and_complete`: the full biconditional combining
-//!   soundness and completeness
 //!
 //! # Soundness (proved in `Soundness.lean`)
 //!
@@ -140,9 +137,7 @@
 //! - `transparent_equiv_is_eq`: transparent bridge equivalence = equality
 //! - `opaque_equiv_trivial`: opaque bridge equivalence is always true
 //!
-//! # DPOR Soundness (proved in `DPOR.lean`)
-//!
-//! ## Linearizability (proved in `Linearizability.lean`)
+//! # Linearizability (proved in `Linearizability.lean`)
 //!
 //! A concurrent execution is linearizable if there exists a sequential
 //! ordering (permutation) of the operations such that the model produces
@@ -157,6 +152,8 @@
 //! - `single_op_linearizable_iff`: single-operation linearizability
 //!   reduces to a bridge check
 //! - `not_linearizable_iff`: characterization of non-linearizability
+//!
+//! # DPOR Soundness (proved in `DPOR.lean`)
 //!
 //! The linearizability checker uses dynamic partial-order reduction to
 //! prune redundant interleavings. Two operations commute at a model

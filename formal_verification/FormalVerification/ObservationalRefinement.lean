@@ -141,17 +141,6 @@ theorem observational_refinement (sys : LockstepSystem)
   have hmono := bounded_bisim_mono sys (pre.length + 1) n sm ss hdepth h
   exact hmono
 
-/--
-  **Full trace observational refinement**: at every step along
-  a trace of length ≤ n, the observations are identical.
--/
-theorem full_trace_refinement (sys : LockstepSystem)
-    (trace : List sys.ActionIdx)
-    (sm : sys.SM) (ss : sys.SS)
-    (h : bounded_bisim sys trace.length sm ss) :
-    runner_passes sys trace sm ss := by
-  exact bounded_bisim_implies_runner sys trace sm ss h
-
 -- =========================================================================
 -- Connecting to the runner
 -- =========================================================================

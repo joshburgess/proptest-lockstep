@@ -28,6 +28,16 @@ pub trait AnyAction: Debug + DynClone + Send {
     /// Returns `Ok(())` on match, or an error message describing the mismatch.
     fn check_bridge(&self, model_result: &dyn Any, sut_result: &dyn Any) -> Result<(), String>;
 
+    /// Compare two model results through the bridge, using `observe_model`
+    /// on both sides. Used by DPOR commutativity checks where both values
+    /// are model results.
+    ///
+    /// Default: falls back to `check_bridge` (correct for symmetric bridges
+    /// where `observe_real == observe_model`).
+    fn check_model_bridge(&self, m1: &dyn Any, m2: &dyn Any) -> Result<(), String> {
+        self.check_bridge(m1, m2)
+    }
+
     /// Store the model result as a new variable in the model environment.
     /// The variable ID is allocated by the runner and passed in.
     fn store_model_var(&self, var_id: usize, result: &dyn Any, env: &mut TypedEnv);
