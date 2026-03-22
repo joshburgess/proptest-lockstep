@@ -97,8 +97,11 @@ pub mod crash_recovery;
 pub mod differential;
 pub mod effects;
 pub mod eventual;
+pub mod depth;
+pub mod regression;
 pub mod session;
 pub mod shrinking;
+pub mod tensor;
 
 #[cfg(feature = "concurrent")]
 pub mod concurrent;
