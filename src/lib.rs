@@ -9,6 +9,8 @@ pub mod runner;
 pub mod theory;
 pub mod witness;
 
+pub mod crash_recovery;
+
 #[cfg(feature = "concurrent")]
 pub mod concurrent;
 

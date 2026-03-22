@@ -222,6 +222,27 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Crash-Recovery Bisimulation (proved in `CrashRecovery.lean`)
+//!
+//! Extends bounded bisimulation with crash transitions. A crash
+//! resets the SUT to a recovered state; the model recovers from a
+//! checkpoint of its durable state. The `crash_bisim` relation
+//! requires that:
+//! 1. A state invariant holds at every reachable state
+//! 2. Normal actions satisfy bridge_equiv (as in bounded_bisim)
+//! 3. After a crash, recovered states are in the bisimulation
+//!
+//! Key theorems:
+//! - `crash_bisim_implies_bounded`: crash bisim is strictly stronger
+//!   than normal bounded bisim
+//! - `crash_bisim_mono`: monotonicity in depth
+//! - `crash_bisim_invariant`: invariant holds at every reachable state
+//! - `crash_recovery_preserves`: recovered states remain in the
+//!   bisimulation
+//! - `crash_bisim_double_crash`: survives multiple consecutive crashes
+//! - `crash_then_bounded_bisim`: after crash+recovery, normal lockstep
+//!   testing is still valid
+//!
 //! # What Is NOT Formalized
 //!
 //! The Lean formalization covers the bridge algebra, the bisimulation
