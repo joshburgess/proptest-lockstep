@@ -222,6 +222,14 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Bisimulation-Guided Shrinking (`src/shrinking.rs`)
+//!
+//! Post-hoc minimization of counterexamples using the bisimulation
+//! structure. After a lockstep mismatch is found, identifies the
+//! failure depth (first failing step) and removes irrelevant setup
+//! actions to produce a minimal failing trace. Based on
+//! `bug_localization` and `testing_completeness`.
+//!
 //! # Differential Bridge Testing (`src/differential.rs`)
 //!
 //! Meta-testing technique: tests the test oracles themselves.
