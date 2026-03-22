@@ -13,6 +13,7 @@ pub mod invariant;
 pub mod commutativity;
 pub mod crash_recovery;
 pub mod eventual;
+pub mod session;
 
 #[cfg(feature = "concurrent")]
 pub mod concurrent;
