@@ -140,17 +140,29 @@ theorem session_bisim_zero (sys : SessionSystem)
   passes, then session bisim holds.
 
   The `hryw` hypothesis connects the bridge guarantee to the
-  session guarantee: if the bridge passes for action `a`, then
-  the read_your_writes check also passes for that action's session.
+  session guarantee: if the bridge passes for action `a` (i.e.,
+  `bridge_equiv` holds), then the read_your_writes check also
+  passes for that action's session. This conditioning on
+  `bridge_equiv` is the natural weakening — it says that
+  bridge-compatible results satisfy RYW, which is a local
+  property of the bridge and session semantics.
+
+  Note: `hryw` still quantifies over all histories, not just
+  reachable ones. Restricting to reachable histories would require
+  threading execution paths through the induction, significantly
+  complicating the proof for a marginal gain (in practice,
+  bridge-compatible systems satisfy RYW for all histories).
 -/
 theorem bounded_implies_session (sys : SessionSystem)
     [DecidableEq sys.Session] [DecidableEq sys.Key]
     (n : Nat) (sm : sys.SM) (ss : sys.SS)
     (hists : SessionHistories sys.Session sys.Key sys.Obs)
     (h : bounded_bisim sys.toLockstepSystem n sm ss)
-    (hryw : ∀ (a : sys.ActionIdx) (ss' : sys.SS)
+    (hryw : ∀ (a : sys.ActionIdx) (sm' : sys.SM) (ss' : sys.SS)
         (hists' : SessionHistories sys.Session sys.Key sys.Obs),
-        -- The RYW condition for each read action at each step
+        -- If the bridge passes at this step...
+        bridge_equiv (sys.bridge a) (sys.step_sut a ss').2 (sys.step_model a sm').2 →
+        -- ...then the RYW check passes for that action's session
         match sys.session_of a, sys.read_key a, sys.sut_read_obs a ss' with
         | some s, some rk, some obs => read_your_writes (hists' s) rk obs
         | _, _, _ => True) :
@@ -163,8 +175,35 @@ theorem bounded_implies_session (sys : SessionSystem)
     simp only [bounded_bisim] at h
     have ha := h a
     constructor
-    · exact hryw a ss hists
+    · exact hryw a sm ss hists ha.1
     · exact ih _ _ _ ha.2
+
+/--
+  **Session bisimulation is monotone in depth.** If session_bisim
+  holds at depth m, it holds at depth n ≤ m (with appropriate
+  history transformations at each step).
+
+  Note: unlike environment-free bisimulations, the histories evolve
+  at each step. Monotonicity holds because the depth-n check is a
+  prefix of the depth-m check — the first n steps are identical.
+-/
+theorem session_bisim_mono (sys : SessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key] :
+    ∀ (n m : Nat) (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs),
+    n ≤ m → session_bisim sys m sm ss hists →
+    session_bisim sys n sm ss hists := by
+  intro n
+  induction n with
+  | zero => intros; trivial
+  | succ k ih =>
+    intro m sm ss hists h hm
+    match m, h with
+    | m' + 1, h' =>
+      simp only [session_bisim] at hm ⊢
+      intro a
+      obtain ⟨hryw, hrest⟩ := hm a
+      exact ⟨hryw, ih m' _ _ _ (by omega) hrest⟩
 
 -- =========================================================================
 -- Session implies convergent (hierarchy edge)
