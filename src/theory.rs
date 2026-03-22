@@ -222,6 +222,12 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Model-Coverage-Guided Generation (`src/coverage.rs`)
+//!
+//! Uses the model's reachable state space as a semantic coverage map.
+//! Instead of random generation, scores candidate actions by whether
+//! they lead to novel model states. The model IS the coverage oracle.
+//!
 //! # Bisimulation-Guided Shrinking (`src/shrinking.rs`)
 //!
 //! Post-hoc minimization of counterexamples using the bisimulation

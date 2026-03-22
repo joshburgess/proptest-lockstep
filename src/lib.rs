@@ -9,6 +9,7 @@ pub mod runner;
 pub mod theory;
 pub mod witness;
 
+pub mod coverage;
 pub mod invariant;
 pub mod commutativity;
 pub mod crash_recovery;
