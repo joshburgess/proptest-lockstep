@@ -222,6 +222,21 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Effect-Indexed Commutativity Lattice (proved in `EffectLattice.lean`)
+//!
+//! Static effect annotations for O(1) commutativity checking. Each
+//! action declares its read/write footprint via `ConflictAlgebra`.
+//! Two actions commute iff their effects don't conflict. The dynamic
+//! model oracle is a fallback for unannotated actions.
+//!
+//! Key theorems:
+//! - `effect_sound`: annotations are sound iff non-conflict implies
+//!   model commutativity
+//! - `effect_dpor_sound`: sound effects enable sound DPOR
+//! - `rw_conflicts_symmetric`: read/write conflicts are symmetric
+//! - `conservative_effects_sound`: more conservative annotations
+//!   remain sound
+//!
 //! # Observational Refinement Contracts (`src/contracts.rs`)
 //!
 //! Turns the bridge algebra into a runtime contract system. A

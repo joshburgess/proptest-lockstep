@@ -15,6 +15,7 @@ pub mod invariant;
 pub mod commutativity;
 pub mod crash_recovery;
 pub mod differential;
+pub mod effects;
 pub mod eventual;
 pub mod session;
 pub mod shrinking;

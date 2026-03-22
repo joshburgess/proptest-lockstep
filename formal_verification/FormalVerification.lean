@@ -12,6 +12,7 @@ import FormalVerification.EventualConsistency
 import FormalVerification.SessionConsistency
 import FormalVerification.Invariant
 import FormalVerification.DPOR
+import FormalVerification.EffectLattice
 import FormalVerification.DerivedBridge
 import FormalVerification.Linearizability
 import FormalVerification.Lockstep
