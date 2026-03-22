@@ -373,13 +373,27 @@
 //! This closes the TypedEnv gap identified by reviewers: the formal
 //! guarantee now covers environment-threaded execution.
 //!
+//! # Projection Chains (proved in `Projection.lean`)
+//!
+//! Formalizes the `Op` DSL — typed projection chains for decomposing
+//! compound return types. Projections are partial functions composing
+//! via Kleisli composition (`Option` monad).
+//!
+//! Key theorems:
+//! - `proj_comp_assoc`: composition is associative
+//! - `proj_comp_id_left/right`: identity is a unit
+//! - `proj_fst/snd/ok/err/some_preserves`: each projection preserves
+//!   bridge_equiv when applied to bridge-equivalent sources
+//! - `proj_comp_preserves`: composed projections preserve bridge_equiv
+//!   (the fundamental GVar theorem — justifies `GVar::new(v, OpOk).then(OpFst)`)
+//!
 //! # What Is NOT Formalized
 //!
-//! The Lean formalization covers the bridge algebra, the bisimulation
-//! relation, the runner correspondence (with and without environments),
-//! DPOR soundness, opaque handle detection, precondition filtering,
-//! crash-recovery, eventual/session consistency, compositional
-//! bisimulation, effect lattice, and certified synthesis. It does
+//! The Lean formalization covers the bridge algebra, bisimulation
+//! (with and without environments), runner correspondence, DPOR,
+//! linearizability, opaque detection, preconditions, crash-recovery,
+//! eventual/session consistency, compositional bisimulation, effect
+//! lattice, certified synthesis, and projection chains. It does
 //! not formalize:
 //! - The proptest generation/shrinking machinery
 //! - The probabilistic guarantee (how many test cases are needed)
