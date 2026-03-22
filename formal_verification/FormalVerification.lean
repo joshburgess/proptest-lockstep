@@ -5,6 +5,7 @@
 -- bisimulation, and soundness theorems.
 
 import FormalVerification.Bridge
+import FormalVerification.BridgeDepth
 import FormalVerification.BridgeRefinement
 import FormalVerification.CertificateHash
 import FormalVerification.CertifiedSynthesis
@@ -25,6 +26,8 @@ import FormalVerification.ObservationalRefinement
 import FormalVerification.OpaqueDetection
 import FormalVerification.Precondition
 import FormalVerification.Projection
+import FormalVerification.Regression
 import FormalVerification.Runner
 import FormalVerification.Soundness
+import FormalVerification.TensorProduct
 import FormalVerification.TestingCompleteness
