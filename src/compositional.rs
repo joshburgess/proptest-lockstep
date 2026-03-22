@@ -23,10 +23,8 @@
 //! product model's state is the pair of sub-states, and actions
 //! are tagged to indicate which subsystem they target.
 
-use std::any::Any;
 use std::fmt::Debug;
 
-use proptest::strategy::BoxedStrategy;
 
 use crate::action::AnyAction;
 use crate::env::TypedEnv;

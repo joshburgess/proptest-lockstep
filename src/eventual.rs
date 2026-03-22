@@ -33,7 +33,6 @@ use std::fmt::Debug;
 
 use proptest_state_machine::ReferenceStateMachine;
 
-use crate::action::AnyAction;
 use crate::env::TypedEnv;
 use crate::invariant::{assert_invariant, InvariantModel};
 use crate::runner::LockstepRef;
