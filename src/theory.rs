@@ -222,6 +222,18 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Compositional Bisimulation (proved in `Compositional.lean`)
+//!
+//! Modular testing: if two independent subsystems each satisfy
+//! bounded bisimulation, their product does too. Tests subsystems
+//! independently, composes the guarantees.
+//!
+//! Key theorems:
+//! - `compositional_bisim`: product bisim from component bisims
+//! - `product_bisim_left/right`: extract component bisims from product
+//! - `product_bisim_iff`: biconditional — product bisim iff both
+//!   components satisfy bisim
+//!
 //! # Effect-Indexed Commutativity Lattice (proved in `EffectLattice.lean`)
 //!
 //! Static effect annotations for O(1) commutativity checking. Each
