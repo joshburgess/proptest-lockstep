@@ -295,3 +295,79 @@ theorem session_successor_structure (sys : SessionSystem)
        | _, _, _ => hists) := by
   simp only [session_bisim] at h
   exact (h a).2
+
+-- =========================================================================
+-- Full session bisimulation (RYW + Monotonic Reads)
+-- =========================================================================
+
+/--
+  **Full session bisimulation** with both read-your-writes AND
+  monotonic reads guarantees. Unlike `session_bisim` (RYW only),
+  this definition:
+  1. Checks `read_your_writes` on every read action
+  2. Checks `monotonic_reads` on every read action
+  3. Updates `last_read` after each read action (threading it
+     through the bisimulation)
+
+  This integrates the `last_read` field and `update_read` function
+  into the bisimulation, closing the integration gap.
+-/
+def session_bisim_full (sys : SessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (obs_le : sys.Obs → sys.Obs → Prop) :
+    Nat → sys.SM → sys.SS →
+    SessionHistories sys.Session sys.Key sys.Obs → Prop
+  | 0, _, _, _ => True
+  | n + 1, sm, ss, hists =>
+    ∀ (a : sys.ActionIdx),
+      -- Check RYW on reads
+      let ryw_ok := match sys.session_of a, sys.read_key a, sys.sut_read_obs a ss with
+        | some s, some k, some obs => read_your_writes (hists s) k obs
+        | _, _, _ => True
+      -- Check monotonic reads on reads
+      let mr_ok := match sys.session_of a, sys.read_key a, sys.sut_read_obs a ss with
+        | some s, some k, some obs => monotonic_reads (hists s) k obs obs_le
+        | _, _, _ => True
+      -- Update histories: writes update last_write
+      let hists_w := match sys.session_of a, sys.write_key a, sys.write_val a with
+        | some s, some k, some v =>
+          fun s' => if s' = s then update_write (hists s) k v else hists s'
+        | _, _, _ => hists
+      -- Update histories: reads update last_read
+      let hists' := match sys.session_of a, sys.read_key a, sys.sut_read_obs a ss with
+        | some s, some k, some obs =>
+          fun s' => if s' = s then update_read (hists_w s) k obs else hists_w s'
+        | _, _, _ => hists_w
+      ryw_ok ∧ mr_ok ∧ session_bisim_full sys obs_le n
+        (sys.step_model a sm).1 (sys.step_sut a ss).1 hists'
+
+/-- Full session bisim at depth 0 is trivially true. -/
+theorem session_bisim_full_zero (sys : SessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (obs_le : sys.Obs → sys.Obs → Prop)
+    (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs) :
+    session_bisim_full sys obs_le 0 sm ss hists :=
+  trivial
+
+/--
+  **Full session bisimulation is monotone in depth.**
+-/
+theorem session_bisim_full_mono (sys : SessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (obs_le : sys.Obs → sys.Obs → Prop) :
+    ∀ (n m : Nat) (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs),
+    n ≤ m → session_bisim_full sys obs_le m sm ss hists →
+    session_bisim_full sys obs_le n sm ss hists := by
+  intro n
+  induction n with
+  | zero => intros; trivial
+  | succ k ih =>
+    intro m sm ss hists h hm
+    match m, h with
+    | m' + 1, h' =>
+      simp only [session_bisim_full] at hm ⊢
+      intro a
+      obtain ⟨hryw, hmr, hrest⟩ := hm a
+      exact ⟨hryw, hmr, ih m' _ _ _ (by omega) hrest⟩
