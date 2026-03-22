@@ -26,6 +26,7 @@ import FormalVerification.BridgeRefinement
   the bridge lifts component equivalences correctly.
 -/
 structure CertifiedBridge (R M : Type) where
+  private mk ::
   bridge : Bridge R M
 
 -- =========================================================================
@@ -172,23 +173,15 @@ theorem certified_list_cons
 -- Synthesis is compositional
 -- =========================================================================
 
-/--
-  **Synthesis is a functor on bridges**: certified constructors
-  preserve bridge_equiv at each level, and the composition of
-  certified bridges is itself certified.
-
-  This is the formal statement of "correct by construction":
-  you cannot construct an unsound CertifiedBridge through the
-  certified constructors. Every `certify_*` function produces
-  a bridge that inherits soundness from its components.
--/
-theorem synthesis_compositional :
-    -- Any bridge built from certify_transparent, certify_opaque,
-    -- certify_sum, certify_prod, certify_option, certify_list
-    -- preserves bridge_equiv at each level.
-    True := trivial
--- The real proof is distributed across the individual theorems above.
--- This meta-theorem just documents the compositional structure.
+-- Compositionality of synthesis:
+-- The certified constructors preserve bridge_equiv at each level.
+-- This is proved by the individual theorems above:
+--   certified_transparent_sound, certified_opaque_sound,
+--   certified_sum_ok, certified_prod_sound,
+--   certified_option_some/none, certified_list_nil/cons.
+-- No separate "synthesis_compositional" theorem is needed —
+-- compositionality follows by structural induction on the
+-- construction, applying the appropriate theorem at each node.
 
 -- =========================================================================
 -- Example: synthesizing a complex bridge

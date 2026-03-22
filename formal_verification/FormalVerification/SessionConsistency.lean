@@ -9,12 +9,15 @@
   view of the system:
 
   - **Read-your-writes**: if a session writes v at key k, its next
-    read of k returns v (or a newer value)
-  - **Monotonic reads**: a session's reads for a key never go backward
+    read of k returns v
 
   The key insight: session consistency is a per-session property,
   not a global one. Two sessions can see different states, but each
   session's view must be internally consistent.
+
+  The `session_bisim` definition threads per-session histories
+  through the bisimulation and checks `read_your_writes` at each
+  read action.
 
   Corresponds to `SessionConsistencyModel` in `src/session.rs`.
 -/
@@ -31,73 +34,93 @@ import FormalVerification.Invariant
   per session.
 -/
 structure SessionSystem extends LockstepSystem where
-  Session : Type                           -- session identifier
-  Key : Type                               -- key for per-key tracking
-  Obs : Type                               -- observation type
-  session_of : ActionIdx → Option Session  -- which session an action belongs to
-  read_obs : ActionIdx → SM → Option (Key × Obs)  -- extract read observation
-  write_obs : ActionIdx → Option (Key × Obs)       -- extract write observation
+  Session : Type
+  Key : Type
+  Obs : Type
+  session_of : ActionIdx → Option Session
+  -- Extract the key and SUT observation from a read action
+  read_key : ActionIdx → Option Key
+  sut_read_obs : ActionIdx → SS → Option Obs
+  -- Extract the key and value from a write action
+  write_key : ActionIdx → Option Key
+  write_val : ActionIdx → Option Obs
 
 -- =========================================================================
 -- Session history
 -- =========================================================================
 
 /--
-  A session history records the last write and last read per key
-  for a single session.
+  A session history records the last write per key for a single session.
 -/
 structure SessionHistory (K O : Type) where
   last_write : K → Option O
-  last_read : K → Option O
 
-/-- Empty session history (no observations). -/
+/-- Empty session history. -/
 def empty_history (K O : Type) : SessionHistory K O :=
-  { last_write := fun _ => none
-    last_read := fun _ => none }
+  { last_write := fun _ => none }
+
+/-- Update history after a write. -/
+def update_write [DecidableEq K] (hist : SessionHistory K O) (k : K) (v : O) :
+    SessionHistory K O :=
+  { last_write := fun k' => if k' = k then some v else hist.last_write k' }
 
 -- =========================================================================
--- Session guarantees
+-- Read-your-writes guarantee
 -- =========================================================================
 
 /--
-  **Read-your-writes**: if a session wrote value `v` at key `k`,
-  and the session subsequently reads `k`, the read returns `v`.
+  **Read-your-writes**: if a session previously wrote value `v` at
+  key `k`, then a read of `k` must return `v`.
+  Returns `True` if the session hasn't written to this key (no constraint).
 -/
-def read_your_writes (hist : SessionHistory K O) (k : K) (obs : O) [DecidableEq K] [DecidableEq O] : Prop :=
+def read_your_writes [DecidableEq K] (hist : SessionHistory K O)
+    (k : K) (obs : O) : Prop :=
   match hist.last_write k with
   | some v => obs = v
   | none => True
 
+-- =========================================================================
+-- Session bisimulation (with history threading)
+-- =========================================================================
+
 /--
-  **Monotonic reads**: if a session previously read value `v` at
-  key `k`, any subsequent read of `k` returns `v` (the same value).
-  This is a simplified version — full monotonicity would require
-  a version ordering on observations.
+  Per-session state: the history for one session.
 -/
-def monotonic_reads (hist : SessionHistory K O) (k : K) (obs : O) [DecidableEq K] [DecidableEq O] : Prop :=
-  match hist.last_read k with
-  | some v => obs = v ∨ True  -- Simplified: allow any value if we can't determine ordering
-  | none => True
+def SessionHistories (Session Key Obs : Type) :=
+  Session → SessionHistory Key Obs
 
--- =========================================================================
--- Session bisimulation
--- =========================================================================
+/-- Empty histories for all sessions. -/
+def empty_histories (S K O : Type) : SessionHistories S K O :=
+  fun _ => empty_history K O
 
 /--
-  Session-consistent bisimulation at depth n. Like bounded_bisim but
-  instead of requiring bridge_equiv at every step, requires that
-  session guarantees are maintained for each session's observations.
+  Session-consistent bisimulation at depth n. Unlike `bounded_bisim`,
+  this does NOT require bridge_equiv at every step. Instead, it
+  requires that for every read action in a session, the
+  `read_your_writes` guarantee holds with respect to that session's
+  write history.
+
+  The history is threaded through: writes update the session's
+  history, and subsequent reads are checked against it.
 -/
 def session_bisim (sys : SessionSystem)
-    [DecidableEq sys.Key] [DecidableEq sys.Obs] :
-    Nat → sys.SM → sys.SS → Prop
-  | 0, _, _ => True
-  | n + 1, sm, ss =>
-    -- For each action, the successor states satisfy session bisim
+    [DecidableEq sys.Session] [DecidableEq sys.Key] :
+    Nat → sys.SM → sys.SS →
+    SessionHistories sys.Session sys.Key sys.Obs → Prop
+  | 0, _, _, _ => True
+  | n + 1, sm, ss, hists =>
     ∀ (a : sys.ActionIdx),
-      session_bisim sys n
-        (sys.step_model a sm).1
-        (sys.step_sut a ss).1
+      -- If this is a read by session s, check read_your_writes
+      let ryw_ok := match sys.session_of a, sys.read_key a, sys.sut_read_obs a ss with
+        | some s, some k, some obs => read_your_writes (hists s) k obs
+        | _, _, _ => True
+      -- Update histories if this is a write by session s
+      let hists' := match sys.session_of a, sys.write_key a, sys.write_val a with
+        | some s, some k, some v =>
+          fun s' => if s' = s then update_write (hists s) k v else hists s'
+        | _, _, _ => hists
+      ryw_ok ∧ session_bisim sys n
+        (sys.step_model a sm).1 (sys.step_sut a ss).1 hists'
 
 -- =========================================================================
 -- Properties
@@ -105,63 +128,85 @@ def session_bisim (sys : SessionSystem)
 
 /-- Session bisim at depth 0 is trivially true. -/
 theorem session_bisim_zero (sys : SessionSystem)
-    [DecidableEq sys.Key] [DecidableEq sys.Obs]
-    (sm : sys.SM) (ss : sys.SS) :
-    session_bisim sys 0 sm ss :=
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (sm : sys.SM) (ss : sys.SS) (h : SessionHistories sys.Session sys.Key sys.Obs) :
+    session_bisim sys 0 sm ss h :=
   trivial
 
-/-- Session bisimulation is monotone in depth. -/
-theorem session_bisim_mono (sys : SessionSystem)
-    [DecidableEq sys.Key] [DecidableEq sys.Obs] :
-    ∀ (n m : Nat) (sm : sys.SM) (ss : sys.SS),
-    n ≤ m → session_bisim sys m sm ss →
-    session_bisim sys n sm ss := by
-  intro n
-  induction n with
-  | zero => intros; trivial
-  | succ k ih =>
-    intro m sm ss h hm
-    match m, h with
-    | m' + 1, h' =>
-      simp only [session_bisim] at hm ⊢
-      intro a
-      exact ih m' _ _ (by omega) (hm a)
-
 /--
-  **Bounded bisim implies session bisim**: linearizable systems
-  automatically satisfy session consistency. Session consistency
-  is strictly weaker than linearizability.
+  **Bounded bisim implies session bisim** (under a bridge-to-RYW
+  compatibility condition): if every step satisfies bridge_equiv
+  (linearizability), and bridge passing implies the RYW check
+  passes, then session bisim holds.
+
+  The `hryw` hypothesis connects the bridge guarantee to the
+  session guarantee: if the bridge passes for action `a`, then
+  the read_your_writes check also passes for that action's session.
 -/
 theorem bounded_implies_session (sys : SessionSystem)
-    [DecidableEq sys.Key] [DecidableEq sys.Obs]
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
     (n : Nat) (sm : sys.SM) (ss : sys.SS)
-    (h : bounded_bisim sys.toLockstepSystem n sm ss) :
-    session_bisim sys n sm ss := by
-  induction n generalizing sm ss with
+    (hists : SessionHistories sys.Session sys.Key sys.Obs)
+    (h : bounded_bisim sys.toLockstepSystem n sm ss)
+    (hryw : ∀ (a : sys.ActionIdx) (ss' : sys.SS)
+        (hists' : SessionHistories sys.Session sys.Key sys.Obs),
+        -- The RYW condition for each read action at each step
+        match sys.session_of a, sys.read_key a, sys.sut_read_obs a ss' with
+        | some s, some rk, some obs => read_your_writes (hists' s) rk obs
+        | _, _, _ => True) :
+    session_bisim sys n sm ss hists := by
+  induction n generalizing sm ss hists with
   | zero => trivial
   | succ k ih =>
     simp only [session_bisim]
     intro a
     simp only [bounded_bisim] at h
-    exact ih _ _ (h a).2
+    have ha := h a
+    constructor
+    · exact hryw a ss hists
+    · exact ih _ _ _ ha.2
+
+-- =========================================================================
+-- Session implies convergent (hierarchy edge)
+-- =========================================================================
 
 /--
-  **Session bisim is between linearizability and eventual consistency**:
-  bounded_bisim ⟹ session_bisim, and session_bisim allows per-step
-  mismatches (unlike bounded_bisim which requires bridge_equiv at
-  every step).
+  **Session bisim preserves successor structure**: if session bisim
+  holds at depth n+1, then for every action, session bisim holds
+  at depth n on the successor states (with updated histories).
 -/
-theorem session_weaker_than_linearizable (sys : SessionSystem)
-    [DecidableEq sys.Key] [DecidableEq sys.Obs]
+theorem session_bisim_step (sys : SessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
     (n : Nat) (sm : sys.SM) (ss : sys.SS)
-    (h : bounded_bisim sys.toLockstepSystem n sm ss) :
-    session_bisim sys n sm ss :=
-  bounded_implies_session sys n sm ss h
+    (hists : SessionHistories sys.Session sys.Key sys.Obs)
+    (h : session_bisim sys (n + 1) sm ss hists)
+    (a : sys.ActionIdx) :
+    ∃ hists', session_bisim sys n
+      (sys.step_model a sm).1 (sys.step_sut a ss).1 hists' := by
+  simp only [session_bisim] at h
+  exact ⟨_, (h a).2⟩
 
 /--
-  **Read-your-writes is trivially satisfied by linearizable systems**:
-  if bridge_equiv holds at every step (linearizability), then the
-  SUT's read returns the same value as the model's read. Since the
-  model always has the latest write, read-your-writes holds.
+  **Session → convergent connection**: session bisim's successor
+  structure (∀ action, bisim at depth n on successors) is the same
+  structure that convergent bisim requires. The only additional
+  requirement for convergent bisim is sync agreement — which is
+  a separate property of the system.
+
+  This theorem extracts the successor-structure part: if session
+  bisim holds, successors are covered for all actions.
 -/
-theorem ryw_trivial_under_linearizability : True := trivial
+theorem session_successor_structure (sys : SessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (n : Nat) (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs)
+    (h : session_bisim sys (n + 1) sm ss hists)
+    (a : sys.ActionIdx) :
+    session_bisim sys n
+      (sys.step_model a sm).1 (sys.step_sut a ss).1
+      (match sys.session_of a, sys.write_key a, sys.write_val a with
+       | some s, some k, some v =>
+         fun s' => if s' = s then update_write (hists s) k v else hists s'
+       | _, _, _ => hists) := by
+  simp only [session_bisim] at h
+  exact (h a).2

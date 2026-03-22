@@ -14,11 +14,13 @@ import FormalVerification.Compositional
 import FormalVerification.CommutativitySpec
 import FormalVerification.CrashRecovery
 import FormalVerification.EventualConsistency
+import FormalVerification.HierarchyStrictness
 import FormalVerification.SessionConsistency
 import FormalVerification.Invariant
 import FormalVerification.DPOR
 import FormalVerification.EffectLattice
 import FormalVerification.Environment
+import FormalVerification.EnvironmentExtensions
 import FormalVerification.DerivedBridge
 import FormalVerification.Linearizability
 import FormalVerification.Lockstep
