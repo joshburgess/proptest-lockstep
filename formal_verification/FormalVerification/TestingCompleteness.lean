@@ -1,14 +1,17 @@
 /-
-  Testing Completeness
+  Bug Detection Completeness (Contrapositive of Observational Refinement)
 
-  The contrapositive of observational refinement: any observable
-  discrepancy between the SUT and model WILL be detected by the
-  runner at sufficient depth. This is the "no false negatives"
-  guarantee — if a bug is observable through the bridge algebra,
-  lockstep testing will find it.
+  Any observable discrepancy between the SUT and model WILL be
+  detected by bounded bisimulation at sufficient depth. This is
+  the "no false negatives" guarantee: if a bug is observable through
+  the bridge algebra, lockstep testing will find it.
 
-  Combined with soundness (Runner.lean) and observational refinement
-  (ObservationalRefinement.lean), this gives the full picture:
+  More precisely, this is the contrapositive of observational
+  refinement: if the SUT and model produce different bridge
+  observations after some prefix, then bounded_bisim fails at
+  depth prefix.length + 1. Combined with soundness (Runner.lean)
+  and observational refinement (ObservationalRefinement.lean),
+  this gives the full picture:
 
     runner passes ↔ bounded_bisim ↔ observational refinement
     ¬ observational refinement → ¬ bounded_bisim → runner fails

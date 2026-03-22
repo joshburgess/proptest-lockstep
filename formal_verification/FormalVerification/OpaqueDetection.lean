@@ -60,22 +60,20 @@ theorem failure_propagates_up (sys : LockstepSystem)
 -- =========================================================================
 
 /--
-  **Opaque step then detect**: if action `a` has an opaque bridge and
-  action `b` at the successor states detects a bridge discrepancy, then
-  bounded bisimulation at depth 2 fails.
+  **Successor action detects discrepancy**: if action `b` at the
+  successor states (after action `a`) detects a bridge discrepancy,
+  then bounded bisimulation at depth 2 fails.
 
   This is the canonical "wrong opaque handle" scenario:
   1. Action `a` creates a handle — opaque bridge passes trivially
   2. Action `b` uses the handle — transparent bridge catches the error
 
-  Note: the opaque hypothesis on `a` is not needed for the proof (the
-  theorem holds for any bridge on `a`), but is included to document
-  the intended use case.
+  The theorem holds for any bridge on `a` (not just opaque), because
+  the depth-2 bisimulation requires depth-1 bisimulation at successor
+  states regardless of whether action `a`'s own bridge passes.
 -/
 theorem opaque_step_then_detect (sys : LockstepSystem)
     (sm : sys.SM) (ss : sys.SS) (a b : sys.ActionIdx)
-    -- Action a has an opaque bridge (always passes)
-    (_ha_opaque : ∀ rs rm, bridge_equiv (sys.bridge a) rs rm)
     -- Action b detects a discrepancy at the successor states
     (hb_fails : ¬ bridge_equiv (sys.bridge b)
         (sys.step_sut b (sys.step_sut a ss).1).2
@@ -88,19 +86,18 @@ theorem opaque_step_then_detect (sys : LockstepSystem)
   exact hb_fails hsucc.1
 
 /--
-  **General delayed detection**: a wrong opaque handle is detected at
-  depth k+1 if the successor states fail bisimulation at depth k.
+  **Delayed detection**: a discrepancy is detected at depth k+1 if the
+  successor states (after action `a`) fail bisimulation at depth k.
 
-  The opaque bridge at action `a` passes trivially, but the bisimulation
-  at depth k+1 requires depth k at the successor states. If those
-  successor states are distinguishable (by any sequence of k future
-  actions with discriminating bridges), the depth-(k+1) bisimulation fails.
+  The bisimulation at depth k+1 requires depth k at successor states.
+  If those successor states are distinguishable (by any sequence of k
+  future actions with discriminating bridges), the depth-(k+1)
+  bisimulation fails. This is `detection_at_successor` specialized
+  to the delayed detection scenario.
 -/
 theorem opaque_delayed_detection (sys : LockstepSystem)
     (sm : sys.SM) (ss : sys.SS)
     (a : sys.ActionIdx) (k : Nat)
-    -- Action a has an opaque bridge
-    (_ha_opaque : ∀ rs rm, bridge_equiv (sys.bridge a) rs rm)
     -- Successor states are distinguishable at depth k
     (hfail : ¬ bounded_bisim sys k
         (sys.step_model a sm).1 (sys.step_sut a ss).1) :
@@ -175,4 +172,4 @@ theorem opaque_depth_sensitivity (sys : LockstepSystem)
     intro a'
     exact ⟨hall_opaque a' _ _, trivial⟩
   · -- Depth 2: action b fails at successor after a
-    exact opaque_step_then_detect sys sm ss a b (hall_opaque a) hb_fails
+    exact opaque_step_then_detect sys sm ss a b hb_fails

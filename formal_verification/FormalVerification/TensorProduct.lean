@@ -146,29 +146,6 @@ theorem shared_commute_sym (sys : TensorSystem) (a b : sys.ActionIdx)
   unfold shared_commute at h ⊢
   exact h.symm
 
--- =========================================================================
--- Tensor product reduces to product when shared state is read-only
--- =========================================================================
-
-/--
-  **Read-only shared state**: if no action modifies the shared
-  component (the shared state observation is constant), then
-  tensor bisim at depth n+1 implies tensor bisim at depth n
-  on successor states — the same structure as product bisim.
-
-  This shows that tensor product GENERALIZES product: when shared
-  state is read-only, the tensor product behaves like the product.
--/
-theorem tensor_readonly_step (sys : TensorSystem)
-    (n : Nat)
-    (sm : sys.SL × sys.SR × sys.Shared)
-    (ss : sys.SSL × sys.SSR × sys.Shared)
-    (h : tensor_bisim sys (n + 1) sm ss)
-    (a : sys.ActionIdx) :
-    tensor_bisim sys n (sys.step_model a sm) (sys.step_sut a ss) := by
-  simp only [tensor_bisim] at h
-  exact h.2 a
-
 /--
   **Tensor bisim implies consistency at every reachable state.**
   If tensor_bisim holds at depth n+1, then after ANY action,
