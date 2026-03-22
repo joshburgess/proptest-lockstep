@@ -6,6 +6,7 @@
 
 import FormalVerification.Bridge
 import FormalVerification.BridgeRefinement
+import FormalVerification.CrashRecovery
 import FormalVerification.DPOR
 import FormalVerification.DerivedBridge
 import FormalVerification.Linearizability
