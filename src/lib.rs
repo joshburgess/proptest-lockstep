@@ -13,6 +13,7 @@ pub mod contracts;
 pub mod coverage;
 pub mod invariant;
 pub mod commutativity;
+pub mod compositional;
 pub mod crash_recovery;
 pub mod differential;
 pub mod effects;
