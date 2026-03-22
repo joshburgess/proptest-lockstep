@@ -25,7 +25,6 @@
 //! - The runner generates pairs of actions, checks whether they
 //!   actually commute in the model, and reports violations
 
-use std::any::Any;
 use std::fmt::Debug;
 
 use proptest_state_machine::ReferenceStateMachine;

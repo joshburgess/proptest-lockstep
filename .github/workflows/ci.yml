@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run lib tests
+        run: cargo test --lib
+
+      - name: Run examples (sequential)
+        run: |
+          cargo test --example kv_store
+          cargo test --example file_system
+          cargo test --example file_system_derived
+          cargo test --example treiber_stack
+          cargo test --example bounded_channel
+          cargo test --example concurrent_counter
+          cargo test --example lru_cache
+          cargo test --example crossbeam_queue
+          cargo test --example scc_hashmap
+          cargo test --example dashmap_test
+          cargo test --example evmap_test
+          cargo test --example bug_detection
+          cargo test --example crash_recovery_log
+          cargo test --example batched_log
+          cargo test --example eventual_cache
+          cargo test --example crdt_counter
+          cargo test --example crdts_library
+          cargo test --example session_kv
+          cargo test --example commutativity_spec
+          cargo test --example effect_commutativity
+          cargo test --example compositional_test
+          cargo test --example differential_bridge
+          cargo test --example guided_shrinking
+          cargo test --example coverage_guided
+          cargo test --example refinement_contract
+          cargo test --example certified_synthesis
+          cargo test --example sled_crash_recovery
+
+      - name: Run compile-fail tests
+        run: cargo test --test compile_fail
+
+  test-concurrent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-concurrent-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run concurrent lib tests
+        run: cargo test --features concurrent --lib
+
+      - name: Run concurrent examples
+        run: |
+          cargo test --example kv_concurrent --features concurrent
+          cargo test --example fs_concurrent --features concurrent
+          cargo test --example treiber_stack --features concurrent
+          cargo test --example bounded_channel --features concurrent
+          cargo test --example concurrent_counter --features concurrent
+          cargo test --example lru_cache --features concurrent
+          cargo test --example crossbeam_queue --features concurrent
+          cargo test --example scc_hashmap --features concurrent
+          cargo test --example dashmap_test --features concurrent
+
+  lean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install elan
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Build Lean formalization
+        run: cd formal_verification && lake build
+
+      - name: Verify zero sorry
+        run: |
+          count=$(grep -r 'sorry' formal_verification/FormalVerification/*.lean | wc -l)
+          echo "Sorry count: $count"
+          [ "$count" -eq 0 ] || (echo "SORRY FOUND!" && exit 1)
