@@ -222,6 +222,24 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Certified Bridge Synthesis (proved in `CertifiedSynthesis.lean`)
+//!
+//! Bridges produced by `certify_*` constructors are paired with
+//! machine-checked soundness proofs. Each constructor produces a
+//! `CertifiedBridge` that is provably correct by construction.
+//! The Rust side provides `CertifiedLockstepBridge` as a marker
+//! trait linking each bridge type to its Lean proof.
+//!
+//! Key theorems:
+//! - `certified_transparent_sound`: equivalence is equality
+//! - `certified_opaque_sound`: equivalence is always true
+//! - `certified_sum_ok`: sum preserves component equivalence
+//! - `certified_prod_sound`: product preserves component equivalence
+//! - `certified_option_some/none`: option preserves
+//! - `certified_list_nil/cons`: list preserves
+//! - `synthesis_matches_transparent/opaque`: synthesized bridges
+//!   match hand-written ones
+//!
 //! # Compositional Bisimulation (proved in `Compositional.lean`)
 //!
 //! Modular testing: if two independent subsystems each satisfy
