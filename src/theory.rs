@@ -222,6 +222,19 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Eventual Consistency (proved in `EventualConsistency.lean`)
+//!
+//! Tests systems that are intentionally non-linearizable but should
+//! converge after synchronization. The `convergent_bisim` relation
+//! requires sync agreement at every depth but NOT per-step bridge_equiv.
+//!
+//! Key theorems:
+//! - `convergent_bisim_sync`: syncing at any depth produces agreement
+//! - `convergent_after_prefix`: convergence holds after any prefix
+//! - `convergent_bisim_mono`: monotonicity in depth
+//! - `bounded_implies_convergent`: linearizability implies eventual
+//!   consistency (strictly stronger)
+//!
 //! # Commutativity Specification Testing (proved in `CommutativitySpec.lean`)
 //!
 //! Tests that operations satisfy a commutativity specification.
