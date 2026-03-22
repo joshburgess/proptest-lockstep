@@ -1,0 +1,15 @@
+error: custom attribute panicked
+ --> tests/compile_fail/no_actions.rs:7:1
+  |
+7 | #[proptest_lockstep::lockstep_actions(state = Model)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: message: No #[action] structs found in module `actions`
+
+warning: unused import: `proptest_lockstep::prelude::*`
+ --> tests/compile_fail/no_actions.rs:2:5
+  |
+2 | use proptest_lockstep::prelude::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
