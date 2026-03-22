@@ -31,6 +31,16 @@
 //! proofs to the Rust `check_bridge` function, which returns
 //! `Result<(), String>`.
 //!
+//! ## Derived Bridge Soundness (proved in `DerivedBridge.lean`)
+//!
+//! Formalizes the polynomial bridge derivation algorithm (the Lean
+//! counterpart of the proc macro's `derive_bridge` function).
+//! `BridgeSpec` describes how a bridge is constructed from primitives
+//! and lifts. The key results prove that each derivation step
+//! preserves bridge_equiv and that the derivation is monotone in
+//! refinement — replacing a component with a finer one produces a
+//! finer composite bridge.
+//!
 //! ## Bridge Refinement Ordering (proved in `BridgeRefinement.lean`)
 //!
 //! Bridges form a preorder under refinement (`bridge_refines`): B1
