@@ -356,11 +356,30 @@
 //! - `crash_then_bounded_bisim`: after crash+recovery, normal lockstep
 //!   testing is still valid
 //!
+//! # Environment Threading (proved in `Environment.lean`)
+//!
+//! Models the `TypedEnv` variable environment that threads through
+//! lockstep execution. The `EnvLockstepSystem` extends
+//! `LockstepSystem` with explicit environment state, store operations,
+//! and environment-parameterized step functions.
+//!
+//! Key theorems:
+//! - `env_runner_bounded_bisim_equiv`: the runner correspondence
+//!   biconditional holds with environment threading
+//! - `lift_bisim_equiv`: the environment-aware formalization reduces
+//!   to the environment-free version for trivial environments,
+//!   showing it's a strict generalization
+//!
+//! This closes the TypedEnv gap identified by reviewers: the formal
+//! guarantee now covers environment-threaded execution.
+//!
 //! # What Is NOT Formalized
 //!
 //! The Lean formalization covers the bridge algebra, the bisimulation
-//! relation, the runner correspondence, DPOR soundness, opaque handle
-//! detection, and precondition filtering. It does not formalize:
+//! relation, the runner correspondence (with and without environments),
+//! DPOR soundness, opaque handle detection, precondition filtering,
+//! crash-recovery, eventual/session consistency, compositional
+//! bisimulation, effect lattice, and certified synthesis. It does
+//! not formalize:
 //! - The proptest generation/shrinking machinery
-//! - The `TypedEnv` variable resolution mechanism
 //! - The probabilistic guarantee (how many test cases are needed)
