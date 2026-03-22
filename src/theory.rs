@@ -222,6 +222,14 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Observational Refinement Contracts (`src/contracts.rs`)
+//!
+//! Turns the bridge algebra into a runtime contract system. A
+//! `RefinementGuard` shadows the SUT with a model, checking bridge
+//! equivalence at every operation. Violations are collected (not
+//! panicked on), enabling use as a production monitor. Based on
+//! `observational_refinement_equiv` — the contract is exactly right.
+//!
 //! # Model-Coverage-Guided Generation (`src/coverage.rs`)
 //!
 //! Uses the model's reachable state space as a semantic coverage map.
