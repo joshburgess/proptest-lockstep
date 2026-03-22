@@ -16,6 +16,7 @@
 import FormalVerification.Environment
 import FormalVerification.CrashRecovery
 import FormalVerification.Compositional
+import FormalVerification.SessionConsistency
 
 -- =========================================================================
 -- Environment-aware crash-recovery
@@ -169,3 +170,92 @@ where
         intro a
         have ha := hm a
         exact ⟨ha.1, ih m' _ _ _ _ (by omega) ha.2⟩
+
+-- =========================================================================
+-- Crash-recovery + session consistency composition
+-- =========================================================================
+
+/--
+  A system supporting both crash-recovery and session consistency.
+  After a crash, session histories reset to empty — the session
+  sees a "fresh start" on recovery.
+-/
+structure CrashSessionSystem extends CrashRecoverySystem where
+  Session : Type
+  Key : Type
+  Obs : Type
+  session_of : ActionIdx → Option Session
+  read_key : ActionIdx → Option Key
+  sut_read_obs : ActionIdx → SS → Option Obs
+  write_key : ActionIdx → Option Key
+  write_val : ActionIdx → Option Obs
+
+/--
+  Extract the underlying SessionSystem from a CrashSessionSystem.
+-/
+abbrev CrashSessionSystem.toSessionSystem (sys : CrashSessionSystem) :
+    SessionSystem where
+  SM := sys.SM
+  SS := sys.SS
+  ActionIdx := sys.ActionIdx
+  RetM := sys.RetM
+  RetS := sys.RetS
+  bridge := sys.bridge
+  step_model := sys.step_model
+  step_sut := sys.step_sut
+  Session := sys.Session
+  Key := sys.Key
+  Obs := sys.Obs
+  session_of := sys.session_of
+  read_key := sys.read_key
+  sut_read_obs := sys.sut_read_obs
+  write_key := sys.write_key
+  write_val := sys.write_val
+
+/--
+  Crash-session bisimulation: the system satisfies BOTH crash
+  bisimulation AND session bisimulation simultaneously. These are
+  orthogonal properties — crash-recovery ensures correctness after
+  crashes, while session consistency ensures per-session ordering
+  guarantees.
+-/
+def crash_session_bisim (sys : CrashSessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (n : Nat) (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs) : Prop :=
+  crash_bisim sys.toCrashRecoverySystem n sm ss
+  ∧ session_bisim sys.toSessionSystem n sm ss hists
+
+/--
+  **Crash-session implies crash**: projection to crash bisimulation.
+-/
+theorem crash_session_implies_crash (sys : CrashSessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (n : Nat) (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs)
+    (h : crash_session_bisim sys n sm ss hists) :
+    crash_bisim sys.toCrashRecoverySystem n sm ss :=
+  h.1
+
+/--
+  **Crash-session implies session**: projection to session bisimulation.
+-/
+theorem crash_session_implies_session (sys : CrashSessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (n : Nat) (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs)
+    (h : crash_session_bisim sys n sm ss hists) :
+    session_bisim sys.toSessionSystem n sm ss hists :=
+  h.2
+
+/--
+  **Crash-session implies bounded**: crash-session bisimulation
+  implies plain bounded bisimulation (via crash → bounded).
+-/
+theorem crash_session_implies_bounded (sys : CrashSessionSystem)
+    [DecidableEq sys.Session] [DecidableEq sys.Key]
+    (n : Nat) (sm : sys.SM) (ss : sys.SS)
+    (hists : SessionHistories sys.Session sys.Key sys.Obs)
+    (h : crash_session_bisim sys n sm ss hists) :
+    bounded_bisim sys.toLockstepSystem n sm ss :=
+  crash_bisim_implies_bounded sys.toCrashRecoverySystem n sm ss h.1

@@ -54,15 +54,23 @@ structure SessionSystem extends LockstepSystem where
 -/
 structure SessionHistory (K O : Type) where
   last_write : K → Option O
+  last_read : K → Option O
 
 /-- Empty session history. -/
 def empty_history (K O : Type) : SessionHistory K O :=
-  { last_write := fun _ => none }
+  { last_write := fun _ => none, last_read := fun _ => none }
 
 /-- Update history after a write. -/
 def update_write [DecidableEq K] (hist : SessionHistory K O) (k : K) (v : O) :
     SessionHistory K O :=
-  { last_write := fun k' => if k' = k then some v else hist.last_write k' }
+  { last_write := fun k' => if k' = k then some v else hist.last_write k',
+    last_read := hist.last_read }
+
+/-- Update history after a read. -/
+def update_read [DecidableEq K] (hist : SessionHistory K O) (k : K) (v : O) :
+    SessionHistory K O :=
+  { last_write := hist.last_write,
+    last_read := fun k' => if k' = k then some v else hist.last_read k' }
 
 -- =========================================================================
 -- Read-your-writes guarantee
@@ -78,6 +86,44 @@ def read_your_writes [DecidableEq K] (hist : SessionHistory K O)
   match hist.last_write k with
   | some v => obs = v
   | none => True
+
+-- =========================================================================
+-- Monotonic reads guarantee
+-- =========================================================================
+
+/--
+  **Monotonic reads**: if a session previously read value `v` at
+  key `k`, then a subsequent read of `k` must return a value ≥ `v`
+  (in the observation ordering). Returns `True` if the session
+  hasn't read this key before (no constraint).
+
+  Requires a `LE` instance on the observation type to express
+  the monotonicity constraint.
+-/
+def monotonic_reads (hist : SessionHistory K O)
+    (k : K) (obs : O) (obs_le : O → O → Prop) : Prop :=
+  match hist.last_read k with
+  | some prev => obs_le prev obs
+  | none => True
+
+/--
+  **RYW implies monotonic reads** when the ordering is reflexive and
+  writes are the only source of values: if read_your_writes holds and
+  the last write equals the last read, then monotonic reads holds
+  (under a reflexive ordering).
+-/
+theorem ryw_implies_monotonic_on_write (K O : Type) [DecidableEq K]
+    (obs_le : O → O → Prop) (hrefl : ∀ x, obs_le x x)
+    (hist : SessionHistory K O) (k : K) (obs : O)
+    (hryw : read_your_writes hist k obs)
+    (hwrite_read : hist.last_write k = hist.last_read k) :
+    monotonic_reads hist k obs obs_le := by
+  unfold monotonic_reads
+  rw [← hwrite_read]
+  unfold read_your_writes at hryw
+  match hist.last_write k, hryw with
+  | some v, hryw => rw [hryw]; exact hrefl v
+  | none, _ => trivial
 
 -- =========================================================================
 -- Session bisimulation (with history threading)

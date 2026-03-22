@@ -18,6 +18,7 @@
 -/
 
 import FormalVerification.Lockstep
+import FormalVerification.BridgeRefinement
 
 -- =========================================================================
 -- Product system
@@ -181,3 +182,38 @@ theorem product_assoc (sys1 sys2 sys3 : LockstepSystem)
   rw [product_bisim_iff, product_bisim_iff, product_bisim_iff, product_bisim_iff]
   exact ⟨fun ⟨⟨h1, h2⟩, h3⟩ => ⟨h1, h2, h3⟩,
          fun ⟨h1, h2, h3⟩ => ⟨⟨h1, h2⟩, h3⟩⟩
+
+-- =========================================================================
+-- Product bridge refinement monotonicity
+-- =========================================================================
+
+/--
+  **Product bridge refinement is monotone**: if both component systems
+  have bridges that refine to finer bridges, then the product system's
+  bisimulation with the original bridges implies bisimulation with
+  the finer bridges.
+
+  This connects `BridgeRefinement.refines_strengthen_bisim` to the
+  compositional structure: composing finer bridges gives finer
+  composite guarantees.
+-/
+theorem product_refines_bisim (sys1 sys2 : LockstepSystem)
+    (bridge1' : (a : sys1.ActionIdx) → Bridge (sys1.RetS a) (sys1.RetM a))
+    (bridge2' : (a : sys2.ActionIdx) → Bridge (sys2.RetS a) (sys2.RetM a))
+    (hrefine1 : ∀ a, bridge_refines (sys1.bridge a) (bridge1' a))
+    (hrefine2 : ∀ a, bridge_refines (sys2.bridge a) (bridge2' a))
+    (n : Nat) (sm1 : sys1.SM) (ss1 : sys1.SS)
+    (sm2 : sys2.SM) (ss2 : sys2.SS)
+    (h : bounded_bisim (product_system sys1 sys2) n (sm1, sm2) (ss1, ss2)) :
+    bounded_bisim
+      (product_system { sys1 with bridge := bridge1' } { sys2 with bridge := bridge2' })
+      n (sm1, sm2) (ss1, ss2) := by
+  -- Decompose product bisim into component bisimulations
+  have ⟨h1, h2⟩ := (product_bisim_iff sys1 sys2 n sm1 ss1 sm2 ss2).mp h
+  -- Refine each component's bridges
+  have h1' := refines_strengthen_bisim sys1 bridge1' hrefine1 n sm1 ss1 h1
+  have h2' := refines_strengthen_bisim sys2 bridge2' hrefine2 n sm2 ss2 h2
+  -- Recompose with the refined systems
+  let sys1' : LockstepSystem := { sys1 with bridge := bridge1' }
+  let sys2' : LockstepSystem := { sys2 with bridge := bridge2' }
+  exact compositional_bisim sys1' sys2' n sm1 ss1 sm2 ss2 h1' h2'
