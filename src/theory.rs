@@ -222,6 +222,17 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Session Consistency (proved in `SessionConsistency.lean`)
+//!
+//! Tests per-session ordering guarantees (Terry et al., 1994):
+//! read-your-writes and monotonic reads. Sits between linearizability
+//! (too strong) and eventual consistency (too weak).
+//!
+//! Key theorems:
+//! - `bounded_implies_session`: linearizability implies session
+//!   consistency (strictly stronger)
+//! - `session_bisim_mono`: monotonicity in depth
+//!
 //! # Eventual Consistency (proved in `EventualConsistency.lean`)
 //!
 //! Tests systems that are intentionally non-linearizable but should
