@@ -15,6 +15,7 @@ pub mod crash_recovery;
 pub mod differential;
 pub mod eventual;
 pub mod session;
+pub mod shrinking;
 
 #[cfg(feature = "concurrent")]
 pub mod concurrent;
