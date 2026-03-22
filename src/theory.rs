@@ -222,6 +222,20 @@
 //! - `precond_bisim_step`: single-step decomposition of preconditioned
 //!   bisimulation
 //!
+//! # Commutativity Specification Testing (proved in `CommutativitySpec.lean`)
+//!
+//! Tests that operations satisfy a commutativity specification.
+//! Users declare `should_commute(a, b, state)` and the framework
+//! verifies the model actually satisfies it.
+//!
+//! Key theorems:
+//! - `spec_sound`: a spec is sound iff `should_commute` implies
+//!   `model_commute`
+//! - `spec_dpor_sound`: if the spec is sound, using it as a DPOR
+//!   oracle preserves linearization validity
+//! - `sound_iff_no_violations`: soundness ↔ no violations
+//! - `finer_spec_sound`: a finer spec is easier to satisfy
+//!
 //! # Crash-Recovery Bisimulation (proved in `CrashRecovery.lean`)
 //!
 //! Extends bounded bisimulation with crash transitions. A crash
