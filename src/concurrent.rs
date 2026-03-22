@@ -538,13 +538,14 @@ where
 // ---------------------------------------------------------------------------
 
 /// A recorded concurrent operation with its result.
-struct OpRecord {
-    action: Box<dyn AnyAction>,
-    result: Box<dyn Any + Send>,
+#[doc(hidden)]
+pub struct OpRecord {
+    pub action: Box<dyn AnyAction>,
+    pub result: Box<dyn Any + Send>,
     /// The variable ID assigned during generation. The linearizability
     /// checker uses this to store model results at the correct ID,
     /// matching the IDs that subsequent actions' GVars reference.
-    var_id: usize,
+    pub var_id: usize,
 }
 
 /// Check whether two operations commute in a given model state.
@@ -565,7 +566,8 @@ struct OpRecord {
 ///
 /// Used by the linearizability checker to prune the interleaving
 /// search space: commuting operations don't need to be reordered.
-fn operations_commute<M: LockstepModel>(
+#[doc(hidden)]
+pub fn operations_commute<M: LockstepModel>(
     model: &M::ModelState,
     env: &TypedEnv,
     a: &OpRecord,
@@ -615,7 +617,8 @@ where
 ///
 /// Returns `Ok(())` if a valid linearization exists, or an error
 /// describing the failure.
-fn check_linearizability<M: LockstepModel>(
+#[doc(hidden)]
+pub fn check_linearizability<M: LockstepModel>(
     initial_model: &M::ModelState,
     initial_env: &TypedEnv,
     branches: &[Vec<OpRecord>],
