@@ -12,6 +12,7 @@ pub mod witness;
 pub mod contracts;
 pub mod coverage;
 pub mod invariant;
+pub mod certified;
 pub mod commutativity;
 pub mod compositional;
 pub mod crash_recovery;
