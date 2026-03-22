@@ -9,6 +9,7 @@ import FormalVerification.BridgeRefinement
 import FormalVerification.CommutativitySpec
 import FormalVerification.CrashRecovery
 import FormalVerification.EventualConsistency
+import FormalVerification.SessionConsistency
 import FormalVerification.Invariant
 import FormalVerification.DPOR
 import FormalVerification.DerivedBridge
