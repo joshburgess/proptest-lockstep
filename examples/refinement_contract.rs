@@ -16,9 +16,12 @@
 
 use std::any::Any;
 use std::collections::HashMap;
+use std::time::Duration;
 
 use proptest_lockstep::prelude::*;
-use proptest_lockstep::contracts::{RefinementGuard, assert_no_violations};
+use proptest_lockstep::contracts::{
+    RefinementGuard, ContractConfig, DivergenceStrategy, assert_no_violations,
+};
 
 // ============================================================================
 // KV Store — correct implementation
@@ -155,7 +158,12 @@ mod tests {
 
         assert_no_violations(&guard);
         assert_eq!(guard.checks_passed(), 3);
-        assert_eq!(guard.total_checks(), 3);
+        assert_eq!(guard.total_steps(), 3);
+
+        // Performance stats are available
+        let perf = guard.performance();
+        assert_eq!(perf.operations_checked, 3);
+        assert_eq!(perf.operations_skipped, 0);
     }
 
     /// Scenario 2: Buggy SUT — violations detected.
@@ -194,21 +202,105 @@ mod tests {
     }
 
     /// Scenario 3: Reset and reuse.
-    /// Guards can be reset to start fresh monitoring.
     #[test]
     fn guard_reset() {
         let mut guard = RefinementGuard::<KvLockstep>::new();
         let mut sut = CorrectKv::new();
 
-        // First session
         let action = kv::put(kv::Put { key: "a".into(), value: "1".into() });
         let result: Box<dyn Any> = Box::new(sut.put("a", "1"));
         guard.check(action.as_ref(), &*result);
-        assert_eq!(guard.total_checks(), 1);
+        assert_eq!(guard.total_steps(), 1);
 
-        // Reset
         guard.reset();
-        assert_eq!(guard.total_checks(), 0);
+        assert_eq!(guard.total_steps(), 0);
         assert_eq!(guard.violation_count(), 0);
+    }
+
+    /// Scenario 4: StopOnFirst divergence strategy.
+    /// After the first violation, the guard stops checking.
+    #[test]
+    fn stop_on_first_violation() {
+        let mut guard = RefinementGuard::<KvLockstep>::with_config(ContractConfig {
+            divergence: DivergenceStrategy::StopOnFirst,
+            ..Default::default()
+        });
+        let mut sut = BuggyKv::new();
+
+        // Trigger the bug
+        for i in 0..5 {
+            let key = format!("k{}", i);
+            let value = format!("v{}", i);
+            let action = kv::put(kv::Put { key: key.clone(), value: value.clone() });
+            let result: Box<dyn Any> = Box::new(sut.put(&key, &value));
+            guard.check(action.as_ref(), &*result);
+        }
+
+        let get = kv::get(kv::Get { key: "k0".into() });
+        let result: Box<dyn Any> = Box::new(sut.get("k0"));
+        guard.check(get.as_ref(), &*result); // violation!
+
+        assert!(guard.is_stopped());
+        assert_eq!(guard.violation_count(), 1);
+
+        // Further checks are skipped
+        let get2 = kv::get(kv::Get { key: "k1".into() });
+        let result2: Box<dyn Any> = Box::new(sut.get("k1"));
+        guard.check(get2.as_ref(), &*result2);
+
+        // Still only 1 violation — the second check was skipped
+        assert_eq!(guard.violation_count(), 1);
+        assert!(guard.performance().operations_skipped > 0);
+    }
+
+    /// Scenario 5: Partial monitoring with sampling.
+    /// Only ~50% of operations are checked.
+    #[test]
+    fn partial_monitoring() {
+        let mut guard = RefinementGuard::<KvLockstep>::with_config(ContractConfig {
+            sampling_rate: 0.5,
+            ..Default::default()
+        });
+        let mut sut = CorrectKv::new();
+
+        // Run 20 operations
+        for i in 0..20 {
+            let key = format!("k{}", i);
+            let value = format!("v{}", i);
+            let action = kv::put(kv::Put { key: key.clone(), value: value.clone() });
+            let result: Box<dyn Any> = Box::new(sut.put(&key, &value));
+            guard.check(action.as_ref(), &*result);
+        }
+
+        let perf = guard.performance();
+        // With 50% sampling, roughly half should be checked
+        assert!(perf.operations_checked > 0);
+        assert!(perf.operations_skipped > 0);
+        assert_eq!(
+            perf.operations_checked + perf.operations_skipped,
+            20
+        );
+        assert!(!guard.has_violations());
+    }
+
+    /// Scenario 6: Performance tracking.
+    #[test]
+    fn performance_tracking() {
+        let mut guard = RefinementGuard::<KvLockstep>::new();
+        let mut sut = CorrectKv::new();
+
+        for i in 0..10 {
+            let action = kv::put(kv::Put {
+                key: format!("k{}", i),
+                value: format!("v{}", i),
+            });
+            let result: Box<dyn Any> = Box::new(sut.put(&format!("k{}", i), &format!("v{}", i)));
+            guard.check(action.as_ref(), &*result);
+        }
+
+        let perf = guard.performance();
+        assert_eq!(perf.operations_checked, 10);
+        assert!(perf.model_time > Duration::ZERO || perf.operations_checked > 0);
+        assert!(perf.total_overhead() >= Duration::ZERO);
     }
 }
