@@ -20,6 +20,7 @@ import FormalVerification.Invariant
 import FormalVerification.DPOR
 import FormalVerification.EffectLattice
 import FormalVerification.Environment
+import FormalVerification.EnvironmentExtensions
 import FormalVerification.DerivedBridge
 import FormalVerification.Linearizability
 import FormalVerification.Lockstep
