@@ -13,12 +13,13 @@
 //!
 //! # Architecture
 //!
-//! Users implement [`CrashRecoveryModel`] on top of [`LockstepModel`]:
+//! Users implement [`CrashRecoveryModel`] on top of
+//! [`InvariantModel`](crate::invariant::InvariantModel):
 //! - `DurableState` — what survives a crash (e.g., on-disk data)
 //! - `model_checkpoint` — extract the durable part of the model state
 //! - `model_recover` — reconstruct model state from a checkpoint
 //! - `sut_recover` — reconstruct the SUT from its persisted state
-//! - `invariant` — optional per-step state predicate
+//! - `invariant` — per-step state predicate (inherited from InvariantModel)
 //!
 //! The runner ([`run_crash_recovery_test`]) executes a normal lockstep
 //! test but probabilistically injects crashes between steps. After
@@ -29,7 +30,7 @@ use std::fmt::Debug;
 use proptest_state_machine::ReferenceStateMachine;
 
 use crate::env::TypedEnv;
-use crate::model::LockstepModel;
+use crate::invariant::{assert_invariant, InvariantModel};
 use crate::runner::LockstepRef;
 
 // ---------------------------------------------------------------------------
@@ -38,10 +39,11 @@ use crate::runner::LockstepRef;
 
 /// Extension trait for lockstep models with crash-recovery semantics.
 ///
-/// A crash resets the SUT to its last persisted state. The model
-/// tracks what's durable via checkpoints. After a crash, both model
-/// and SUT recover from the checkpoint, and testing continues.
-pub trait CrashRecoveryModel: LockstepModel {
+/// Extends [`InvariantModel`] (which provides per-step invariant
+/// checking) with crash/recovery operations. A crash resets the SUT
+/// to its last persisted state. The model tracks what's durable via
+/// checkpoints.
+pub trait CrashRecoveryModel: InvariantModel {
     /// The durable state that survives a crash.
     ///
     /// For a write-ahead log, this might be `Vec<LogEntry>`.
@@ -67,16 +69,6 @@ pub trait CrashRecoveryModel: LockstepModel {
     /// The old SUT is consumed (simulating process death) and a new
     /// one is returned (simulating restart).
     fn sut_recover(sut: Self::Sut) -> Self::Sut;
-
-    /// Optional invariant checked on the model state at every step.
-    ///
-    /// If this returns `false`, the test panics with an invariant
-    /// violation message. Use this for properties like "balance is
-    /// non-negative" or "tree is balanced" that should hold at
-    /// every reachable state.
-    fn invariant(_state: &Self::ModelState) -> bool {
-        true
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -156,11 +148,7 @@ pub fn run_crash_recovery_test<M: CrashRecoveryModel>(config: CrashRecoveryConfi
 
         for transition in &transitions {
             // Check invariant
-            assert!(
-                M::invariant(&model_state),
-                "Invariant violation!\n  Model state: {:?}",
-                model_state
-            );
+            assert_invariant::<M>(&model_state, "before step");
 
             // Run the model
             let model_result = M::step_model(
@@ -213,19 +201,11 @@ pub fn run_crash_recovery_test<M: CrashRecoveryModel>(config: CrashRecoveryConfi
                 next_var_id = 0;
 
                 // Check invariant after recovery
-                assert!(
-                    M::invariant(&model_state),
-                    "Invariant violation after crash recovery!\n  Model state: {:?}\n  Checkpoint: {:?}",
-                    model_state, checkpoint
-                );
+                assert_invariant::<M>(&model_state, "after crash recovery");
             }
         }
 
         // Final invariant check
-        assert!(
-            M::invariant(&model_state),
-            "Invariant violation at end of test!\n  Model state: {:?}",
-            model_state
-        );
+        assert_invariant::<M>(&model_state, "end of test");
     });
 }

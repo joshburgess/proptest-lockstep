@@ -18,7 +18,7 @@
   in `src/crash_recovery.rs`.
 -/
 
-import FormalVerification.Lockstep
+import FormalVerification.Invariant
 
 -- =========================================================================
 -- Crash-recovery system
