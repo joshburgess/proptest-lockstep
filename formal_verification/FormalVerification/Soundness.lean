@@ -1,9 +1,15 @@
 /-
-  Soundness of Lockstep Testing
+  Soundness of Lockstep Testing (User-Facing API)
 
-  The main theorems connecting lockstep testing to formal guarantees.
-  The central result is `lockstep_test_sound`: if the runner passes
-  on all traces of length n, then bounded bisimulation holds at depth n.
+  Collects key soundness results in one place for users of the
+  framework. The central result `lockstep_test_sound` is the
+  forward direction of `runner_bounded_bisim_equiv` from Runner.lean,
+  which proves the full biconditional:
+
+    runner passes on all traces ↔ bounded_bisim
+
+  This file re-exports the forward direction and adds convenience
+  theorems about bridge properties and depth.
 -/
 
 import FormalVerification.Runner

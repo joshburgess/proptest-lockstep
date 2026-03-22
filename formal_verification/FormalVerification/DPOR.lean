@@ -184,3 +184,84 @@ theorem dpor_swap_at (sys : LockstepSystem)
   rw [linearization_check_append] at h ⊢
   obtain ⟨hpre, htail⟩ := h
   exact ⟨hpre, dpor_swap_sound sys r1 r2 suf _ hcomm htail⟩
+
+-- =========================================================================
+-- Sleep set soundness
+-- =========================================================================
+
+/--
+  **Swap reachability**: `l2` is reachable from `l1` by a chain of
+  adjacent commuting swaps. Each swap exchanges two adjacent elements
+  that commute at the model state induced by the prefix before them.
+
+  This is the equivalence relation that sleep sets exploit: all
+  elements in a swap-reachability class produce the same
+  linearization_check result, so exploring one representative suffices.
+-/
+inductive swap_reachable (sys : LockstepSystem) (sm : sys.SM) :
+    List (OpRecord sys) → List (OpRecord sys) → Prop
+  | refl (l) : swap_reachable sys sm l l
+  | swap (pre : List (OpRecord sys)) (r1 r2 : OpRecord sys)
+      (suf : List (OpRecord sys))
+      (hcomm : model_commute sys r1.action r2.action
+        (model_trace_state sys pre sm)) :
+      swap_reachable sys sm
+        (pre ++ r1 :: r2 :: suf) (pre ++ r2 :: r1 :: suf)
+  | trans {l1 l2 l3 : List (OpRecord sys)}
+      (h12 : swap_reachable sys sm l1 l2)
+      (h23 : swap_reachable sys sm l2 l3) :
+      swap_reachable sys sm l1 l3
+
+/--
+  **Sleep set soundness**: swap-reachable permutations produce the
+  same linearization_check result. If linearization_check passes for
+  one ordering, it passes for all swap-reachable orderings.
+
+  This justifies the sleep set optimization: the DPOR checker only
+  needs to explore ONE representative per swap-equivalence class.
+  Operations added to the sleep set (because they commute with all
+  explored operations) can be safely skipped without missing any
+  linearization violation.
+-/
+theorem swap_reachable_sound (sys : LockstepSystem) (sm : sys.SM)
+    (l1 l2 : List (OpRecord sys))
+    (hreach : swap_reachable sys sm l1 l2)
+    (h : linearization_check sys l1 sm) :
+    linearization_check sys l2 sm := by
+  induction hreach with
+  | refl => exact h
+  | swap pre r1 r2 suf hcomm =>
+    exact dpor_swap_at sys pre r1 r2 suf sm hcomm h
+  | trans _ _ ih12 ih23 =>
+    exact ih23 (ih12 h)
+
+/--
+  **Swap reachability is symmetric**: if l2 is swap-reachable from l1,
+  then l1 is swap-reachable from l2. Each single swap reverses via
+  commutativity symmetry; chains reverse by flipping the order.
+-/
+theorem swap_reachable_symm (sys : LockstepSystem) (sm : sys.SM)
+    (l1 l2 : List (OpRecord sys))
+    (h : swap_reachable sys sm l1 l2) :
+    swap_reachable sys sm l2 l1 := by
+  induction h with
+  | refl => exact swap_reachable.refl _
+  | swap pre r1 r2 suf hcomm =>
+    exact swap_reachable.swap pre r2 r1 suf
+      (commute_sym sys r1.action r2.action _ hcomm)
+  | trans _ _ ih12 ih23 =>
+    exact swap_reachable.trans ih23 ih12
+
+/--
+  **Sleep set biconditional**: swap-reachable permutations are
+  equivalent for linearization_check — one passes iff the other does.
+  This justifies exploring only one representative per
+  swap-equivalence class (the sleep set optimization).
+-/
+theorem sleep_set_equiv (sys : LockstepSystem) (sm : sys.SM)
+    (l1 l2 : List (OpRecord sys))
+    (hreach : swap_reachable sys sm l1 l2) :
+    linearization_check sys l1 sm ↔ linearization_check sys l2 sm :=
+  ⟨swap_reachable_sound sys sm l1 l2 hreach,
+   swap_reachable_sound sys sm l2 l1 (swap_reachable_symm sys sm l1 l2 hreach)⟩
+
