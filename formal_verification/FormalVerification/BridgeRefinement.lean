@@ -89,14 +89,6 @@ theorem transparent_refines_uniform (T : Type) [DecidableEq T]
   unfold bridge_equiv
   rw [h, huniform]
 
-/--
-  Transparent self-refinement: transparent refines itself.
-  (Special case of reflexivity, stated for clarity.)
--/
-theorem transparent_refines_self (T : Type) [DecidableEq T] :
-    bridge_refines (transparent T) (transparent T) :=
-  refines_refl _
-
 -- =========================================================================
 -- Lifts preserve refinement (monotonicity)
 -- =========================================================================
