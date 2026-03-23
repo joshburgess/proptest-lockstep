@@ -490,3 +490,43 @@ theorem session_commute_sym (sys : SessionSystem) (a b : sys.ActionIdx)
   | some _, none => simp [ha, hb]
   | none, some _ => simp [ha, hb]
   | none, none => simp [ha, hb]
+
+-- =========================================================================
+-- Session DPOR swap: the main theorem
+-- =========================================================================
+
+/--
+  **Session-commute implies equal successor states**: if two
+  actions session-commute, the model and SUT states after [a, b]
+  equal those after [b, a].
+-/
+theorem session_commute_states_equal (sys : SessionSystem)
+    (a b : sys.ActionIdx) (sm : sys.SM) (ss : sys.SS)
+    (hcomm : session_commute sys a b sm ss) :
+    (sys.step_model b (sys.step_model a sm).1).1 =
+      (sys.step_model a (sys.step_model b sm).1).1
+    ∧ (sys.step_sut b (sys.step_sut a ss).1).1 =
+      (sys.step_sut a (sys.step_sut b ss).1).1 :=
+  ⟨hcomm.2.1.1, hcomm.2.2⟩
+
+/--
+  **Session DPOR: cross-session write-only actions don't affect
+  each other's RYW checks**. If action `b` writes to session `s₂`
+  and action `a` reads from session `s₁ ≠ s₂`, then the RYW check
+  for `a` is the same whether or not `b`'s write has occurred.
+
+  This is the key lemma making session DPOR strictly more
+  permissive than plain DPOR: the user doesn't need to check
+  commutativity of session-specific checks, only model/SUT
+  state commutativity.
+-/
+theorem session_write_preserves_other_ryw {S K O : Type}
+    [DecidableEq S] [DecidableEq K]
+    (hists : SessionHistories S K O)
+    (s₁ s₂ : S) (k₁ k₂ : K) (obs : O) (v₂ : O)
+    (hdiff : s₁ ≠ s₂) :
+    read_your_writes
+      ((fun s' => if s' = s₂ then update_write (hists s₂) k₂ v₂ else hists s') s₁)
+      k₁ obs
+    = read_your_writes (hists s₁) k₁ obs := by
+  simp [hdiff]

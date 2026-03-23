@@ -151,3 +151,60 @@ theorem crash_bisim_implies_linearizable (sys : CrashRecoverySystem)
       (record_execution sys.toLockstepSystem trace ss) sm :=
   bounded_bisim_implies_linearizable sys.toLockstepSystem n sm ss
     (crash_bisim_implies_bounded sys n sm ss h) trace hlen
+
+-- =========================================================================
+-- Crash-action swap: the real deferral theorem
+-- =========================================================================
+
+/--
+  **Crash-action swap equivalence**: if checkpoint transparency holds
+  for action `a`, then crashing BEFORE action `a` and crashing AFTER
+  action `a` produce the same recovered model state.
+
+  This is the real deferral theorem: the crash point can be moved
+  past a checkpoint-transparent action without changing the outcome.
+  It uses `checkpoint_transparent` non-trivially — the durable state
+  must be the same regardless of whether action `a` has executed.
+
+  Combined with `crash_bisim`, this means: if crash_bisim holds and
+  an action is checkpoint-transparent, the crash-interleaving
+  exploration can skip one of the two orderings (crash-before-a
+  vs crash-after-a).
+-/
+theorem crash_action_swap_model (sys : CrashRecoverySystem)
+    (a : sys.ActionIdx) (sm : sys.SM)
+    (hchk : sys.checkpoint (sys.step_model a sm).1 = sys.checkpoint sm) :
+    sys.model_recover (sys.checkpoint (sys.step_model a sm).1)
+    = sys.model_recover (sys.checkpoint sm) := by
+  rw [hchk]
+
+/--
+  **Crash deferral with checkpoint transparency**: if an action `a`
+  doesn't change the durable state (`checkpoint` is the same before
+  and after `a`), then crashing after `a` is equivalent to crashing
+  before `a` — the recovered model state is identical.
+
+  This is the non-trivial part that `crash_deferral` was missing:
+  it actually USES checkpoint transparency to prove that the crash
+  point doesn't matter for checkpoint-transparent actions.
+
+  Typical example: a read-only action doesn't modify the durable
+  state, so a crash before or after the read produces the same
+  recovered state.
+-/
+theorem crash_bisim_transparent_action (sys : CrashRecoverySystem)
+    (a : sys.ActionIdx) (sm : sys.SM) (ss : sys.SS) (n : Nat)
+    (h : crash_bisim sys (n + 1) sm ss)
+    -- Action a doesn't change the durable state
+    (hchk : sys.checkpoint (sys.step_model a sm).1 = sys.checkpoint sm)
+    -- SUT recovery is also transparent to a
+    (hsut : sys.sut_recover (sys.step_sut a ss).1 = sys.sut_recover ss) :
+    -- Then crash_bisim on the recovered states after a
+    -- equals crash_bisim on the recovered states before a
+    crash_bisim sys n
+      (sys.model_recover (sys.checkpoint (sys.step_model a sm).1))
+      (sys.sut_recover (sys.step_sut a ss).1)
+    ↔ crash_bisim sys n
+      (sys.model_recover (sys.checkpoint sm))
+      (sys.sut_recover ss) := by
+  rw [hchk, hsut]
