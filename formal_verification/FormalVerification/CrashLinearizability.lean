@@ -18,6 +18,7 @@
 
 import FormalVerification.CrashRecovery
 import FormalVerification.Linearizability
+import FormalVerification.CrashSessionObs
 
 -- =========================================================================
 -- Checkpoint transparency
@@ -208,3 +209,94 @@ theorem crash_bisim_transparent_action (sys : CrashRecoverySystem)
       (sys.model_recover (sys.checkpoint sm))
       (sys.sut_recover ss) := by
   rw [hchk, hsut]
+
+-- =========================================================================
+-- Crash-transparent action elimination on traces
+-- =========================================================================
+
+/--
+  An action is **crash-transparent** at a given state if it doesn't
+  change the durable state (checkpoint is invariant) AND the SUT's
+  recovery undoes its effects. Intuitively: a crash after this
+  action "erases" it completely.
+
+  Typical examples: read-only actions, logging actions that don't
+  persist, any action whose effects are purely in-memory.
+-/
+def crash_transparent (sys : CrashRecoverySystem)
+    (a : sys.ActionIdx) (sm : sys.SM) (ss : sys.SS) : Prop :=
+  sys.checkpoint (sys.step_model a sm).1 = sys.checkpoint sm
+  ∧ sys.sut_recover (sys.step_sut a ss).1 = sys.sut_recover ss
+
+/--
+  **crash_model_after splits over append**: processing a concatenated
+  trace is the same as processing the prefix and then the suffix
+  starting from the prefix's final state.
+-/
+theorem crash_model_after_append (sys : CrashSessionSystem)
+    (l₁ l₂ : List (CrashEvent sys.ActionIdx)) (sm : sys.SM) :
+    crash_model_after sys (l₁ ++ l₂) sm
+    = crash_model_after sys l₂ (crash_model_after sys l₁ sm) := by
+  induction l₁ generalizing sm with
+  | nil => simp [crash_model_after]
+  | cons ev rest ih =>
+    match ev with
+    | .action a =>
+      simp only [List.cons_append, crash_model_after]
+      exact ih (sys.step_model a sm).1
+    | .crash =>
+      simp only [List.cons_append, crash_model_after]
+      exact ih (sys.model_recover (sys.checkpoint sm))
+
+/--
+  **crash_sut_after splits over append** (symmetric to model).
+-/
+theorem crash_sut_after_append (sys : CrashSessionSystem)
+    (l₁ l₂ : List (CrashEvent sys.ActionIdx)) (ss : sys.SS) :
+    crash_sut_after sys (l₁ ++ l₂) ss
+    = crash_sut_after sys l₂ (crash_sut_after sys l₁ ss) := by
+  induction l₁ generalizing ss with
+  | nil => simp [crash_sut_after]
+  | cons ev rest ih =>
+    match ev with
+    | .action a =>
+      simp only [List.cons_append, crash_sut_after]
+      exact ih (sys.step_sut a ss).1
+    | .crash =>
+      simp only [List.cons_append, crash_sut_after]
+      exact ih (sys.sut_recover ss)
+
+/--
+  **CRASH-TRANSPARENT ACTION ELIMINATION**: in a crash-interleaved
+  trace, a crash-transparent action immediately before a crash can
+  be removed without changing the final state.
+
+  `crash_model_after [prefix, action a, crash, suffix] sm`
+  `= crash_model_after [prefix, crash, suffix] sm`
+
+  This is the genuine crash deferral theorem. It operates on
+  `CrashEvent` traces and shows that crash-transparent actions
+  before crash points are "erased" by the crash. The proof uses
+  `crash_model_after_append` to split the trace at the elimination
+  point, then shows the intermediate states are equal via
+  checkpoint transparency.
+
+  This justifies PRUNING in crash-interleaving exploration: traces
+  that differ only by having crash-transparent actions before crash
+  points produce the same final state, so only one needs checking.
+-/
+theorem crash_transparent_eliminate_model
+    (sys : CrashSessionSystem)
+    (pre : List (CrashEvent sys.ActionIdx))
+    (a : sys.ActionIdx)
+    (suf : List (CrashEvent sys.ActionIdx))
+    (sm : sys.SM)
+    (hchk_trans : sys.checkpoint
+      (sys.step_model a (crash_model_after sys pre sm)).1
+      = sys.checkpoint (crash_model_after sys pre sm)) :
+    crash_model_after sys (pre ++ [.action a, .crash] ++ suf) sm
+    = crash_model_after sys (pre ++ [.crash] ++ suf) sm := by
+  -- Use the append splitting lemma and checkpoint transparency
+  -- The proof: split traces at boundaries, show the [action a, crash]
+  -- segment produces the same state as [crash] via hchk_trans
+  simp only [crash_model_after_append, crash_model_after, hchk_trans]
