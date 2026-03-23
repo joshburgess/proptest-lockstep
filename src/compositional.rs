@@ -227,36 +227,43 @@ impl std::fmt::Display for CompositionResult {
 // Incremental compositional testing
 // ---------------------------------------------------------------------------
 
+/// Bridge precision level for tracking what has been verified.
+///
+/// When a subsystem's bridge precision changes (e.g., from `Opaque`
+/// to `Transparent`), the subsystem must be re-tested. Previous
+/// results at a *coarser* precision are NOT reusable at a finer
+/// precision (finer bridges are strictly stronger). Results at a
+/// *finer* precision DO cover coarser precisions (by
+/// `refines_strengthen_bisim`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum BridgePrecision {
+    /// All bridges opaque — fastest, weakest guarantee.
+    Opaque,
+    /// Mix of opaque and transparent bridges.
+    Mixed,
+    /// All bridges transparent — slowest, strongest guarantee.
+    Transparent,
+}
+
 /// Tracks incremental testing state for composed systems.
 ///
 /// When you have a composed system (subsystem A + subsystem B) and
 /// refine one subsystem's bridges, you only need to re-test that
 /// subsystem. The other subsystem's previous test result carries over.
 ///
-/// This is justified by `product_bisim_iff` and `product_refines_bisim`
-/// in `Compositional.lean`: product bisimulation is equivalent to both
-/// components satisfying bisimulation independently, and bridge
-/// refinement on one component doesn't affect the other.
+/// Bridge precision is tracked per subsystem. If you upgrade a
+/// subsystem's bridges to a finer precision, the subsystem is
+/// automatically invalidated (must be re-tested). Downgrading
+/// precision reuses the previous (stronger) result.
 ///
-/// # Example
-///
-/// ```text
-/// let mut comp = IncrementalComposition::new();
-///
-/// // Initial testing: test both subsystems
-/// comp.test_left::<Counter>(1..20);     // Counter passes
-/// comp.test_right::<Logger>(1..20);     // Logger passes
-/// assert!(comp.is_sound());             // Composition is sound
-///
-/// // Later: refine Logger's bridges from Opaque to Transparent
-/// // Only need to re-test Logger; Counter's result is reused
-/// comp.retest_right::<Logger>(1..20);   // Re-test Logger only
-/// assert!(comp.is_sound());             // Still sound
-/// ```
+/// Justified by `product_bisim_iff` and `product_refines_bisim`
+/// in `Compositional.lean`.
 #[derive(Debug, Clone)]
 pub struct IncrementalComposition {
     left_verified: bool,
     right_verified: bool,
+    left_precision: BridgePrecision,
+    right_precision: BridgePrecision,
     left_traces_tested: usize,
     right_traces_tested: usize,
 }
@@ -268,6 +275,8 @@ impl IncrementalComposition {
         IncrementalComposition {
             left_verified: false,
             right_verified: false,
+            left_precision: BridgePrecision::Opaque,
+            right_precision: BridgePrecision::Opaque,
             left_traces_tested: 0,
             right_traces_tested: 0,
         }
@@ -314,6 +323,29 @@ impl IncrementalComposition {
         self.test_right::<R>(size);
     }
 
+    /// Set the left subsystem's bridge precision and automatically
+    /// invalidate if the precision is FINER than previously tested.
+    ///
+    /// If the new precision is coarser or equal, the previous result
+    /// is reused (by `refines_strengthen_bisim`: finer bridges tested
+    /// → coarser bridges automatically satisfied).
+    pub fn set_left_precision(&mut self, precision: BridgePrecision) {
+        if precision > self.left_precision {
+            // Finer precision → must re-test
+            self.left_verified = false;
+        }
+        // Coarser or equal → previous result still valid
+        self.left_precision = precision;
+    }
+
+    /// Set the right subsystem's bridge precision.
+    pub fn set_right_precision(&mut self, precision: BridgePrecision) {
+        if precision > self.right_precision {
+            self.right_verified = false;
+        }
+        self.right_precision = precision;
+    }
+
     /// Invalidate the left subsystem's result (e.g., after changing its
     /// implementation). Forces re-testing before the composition is sound.
     pub fn invalidate_left(&mut self) {
@@ -323,6 +355,16 @@ impl IncrementalComposition {
     /// Invalidate the right subsystem's result.
     pub fn invalidate_right(&mut self) {
         self.right_verified = false;
+    }
+
+    /// Get the current bridge precision for the left subsystem.
+    pub fn left_precision(&self) -> BridgePrecision {
+        self.left_precision
+    }
+
+    /// Get the current bridge precision for the right subsystem.
+    pub fn right_precision(&self) -> BridgePrecision {
+        self.right_precision
     }
 
     /// Whether the composition is sound: both subsystems have been
@@ -340,6 +382,8 @@ impl IncrementalComposition {
             left_verified: self.left_verified,
             right_verified: self.right_verified,
             composition_sound: self.is_sound(),
+            left_precision: self.left_precision,
+            right_precision: self.right_precision,
             left_tests_run: self.left_traces_tested,
             right_tests_run: self.right_traces_tested,
         }
@@ -361,6 +405,10 @@ pub struct IncrementalResult {
     pub right_verified: bool,
     /// Whether the composition is sound (both verified).
     pub composition_sound: bool,
+    /// Bridge precision level for the left subsystem.
+    pub left_precision: BridgePrecision,
+    /// Bridge precision level for the right subsystem.
+    pub right_precision: BridgePrecision,
     /// Total number of test runs for the left subsystem.
     pub left_tests_run: usize,
     /// Total number of test runs for the right subsystem.
@@ -371,10 +419,12 @@ impl std::fmt::Display for IncrementalResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Incremental composition: left={} ({}x), right={} ({}x), composed={}",
+            "Incremental composition: left={}/{:?} ({}x), right={}/{:?} ({}x), composed={}",
             if self.left_verified { "PASS" } else { "PENDING" },
+            self.left_precision,
             self.left_tests_run,
             if self.right_verified { "PASS" } else { "PENDING" },
+            self.right_precision,
             self.right_tests_run,
             if self.composition_sound { "SOUND" } else { "INCOMPLETE" },
         )
