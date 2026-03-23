@@ -222,3 +222,161 @@ impl std::fmt::Display for CompositionResult {
         )
     }
 }
+
+// ---------------------------------------------------------------------------
+// Incremental compositional testing
+// ---------------------------------------------------------------------------
+
+/// Tracks incremental testing state for composed systems.
+///
+/// When you have a composed system (subsystem A + subsystem B) and
+/// refine one subsystem's bridges, you only need to re-test that
+/// subsystem. The other subsystem's previous test result carries over.
+///
+/// This is justified by `product_bisim_iff` and `product_refines_bisim`
+/// in `Compositional.lean`: product bisimulation is equivalent to both
+/// components satisfying bisimulation independently, and bridge
+/// refinement on one component doesn't affect the other.
+///
+/// # Example
+///
+/// ```text
+/// let mut comp = IncrementalComposition::new();
+///
+/// // Initial testing: test both subsystems
+/// comp.test_left::<Counter>(1..20);     // Counter passes
+/// comp.test_right::<Logger>(1..20);     // Logger passes
+/// assert!(comp.is_sound());             // Composition is sound
+///
+/// // Later: refine Logger's bridges from Opaque to Transparent
+/// // Only need to re-test Logger; Counter's result is reused
+/// comp.retest_right::<Logger>(1..20);   // Re-test Logger only
+/// assert!(comp.is_sound());             // Still sound
+/// ```
+#[derive(Debug, Clone)]
+pub struct IncrementalComposition {
+    left_verified: bool,
+    right_verified: bool,
+    left_traces_tested: usize,
+    right_traces_tested: usize,
+}
+
+impl IncrementalComposition {
+    /// Create a new incremental composition tracker.
+    /// Neither subsystem is verified yet.
+    pub fn new() -> Self {
+        IncrementalComposition {
+            left_verified: false,
+            right_verified: false,
+            left_traces_tested: 0,
+            right_traces_tested: 0,
+        }
+    }
+
+    /// Test only the left subsystem. Marks it as verified if all tests pass.
+    ///
+    /// The right subsystem's previous result (if any) is preserved.
+    /// This is justified by `product_bisim_iff`: the product passes
+    /// iff both components pass independently.
+    pub fn test_left<L: LockstepModel>(&mut self, size: std::ops::Range<usize>) {
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            crate::runner::run_lockstep_test::<L>(size.clone());
+        }));
+        self.left_verified = result.is_ok();
+        self.left_traces_tested += 1;
+    }
+
+    /// Test only the right subsystem. Marks it as verified if all tests pass.
+    ///
+    /// The left subsystem's previous result (if any) is preserved.
+    pub fn test_right<R: LockstepModel>(&mut self, size: std::ops::Range<usize>) {
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            crate::runner::run_lockstep_test::<R>(size.clone());
+        }));
+        self.right_verified = result.is_ok();
+        self.right_traces_tested += 1;
+    }
+
+    /// Re-test the left subsystem after a change (e.g., bridge refinement).
+    ///
+    /// The right subsystem's previous result is reused — this is the
+    /// incremental guarantee from `product_refines_bisim`: refining
+    /// one component's bridges doesn't invalidate the other component's
+    /// test results.
+    pub fn retest_left<L: LockstepModel>(&mut self, size: std::ops::Range<usize>) {
+        self.test_left::<L>(size);
+    }
+
+    /// Re-test the right subsystem after a change.
+    ///
+    /// The left subsystem's previous result is reused.
+    pub fn retest_right<R: LockstepModel>(&mut self, size: std::ops::Range<usize>) {
+        self.test_right::<R>(size);
+    }
+
+    /// Invalidate the left subsystem's result (e.g., after changing its
+    /// implementation). Forces re-testing before the composition is sound.
+    pub fn invalidate_left(&mut self) {
+        self.left_verified = false;
+    }
+
+    /// Invalidate the right subsystem's result.
+    pub fn invalidate_right(&mut self) {
+        self.right_verified = false;
+    }
+
+    /// Whether the composition is sound: both subsystems have been
+    /// verified independently.
+    ///
+    /// By `product_bisim_iff` (Compositional.lean), the product
+    /// satisfies bounded bisimulation iff both components do.
+    pub fn is_sound(&self) -> bool {
+        self.left_verified && self.right_verified
+    }
+
+    /// Get the detailed result.
+    pub fn result(&self) -> IncrementalResult {
+        IncrementalResult {
+            left_verified: self.left_verified,
+            right_verified: self.right_verified,
+            composition_sound: self.is_sound(),
+            left_tests_run: self.left_traces_tested,
+            right_tests_run: self.right_traces_tested,
+        }
+    }
+}
+
+impl Default for IncrementalComposition {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Result of incremental compositional verification.
+#[derive(Debug, Clone)]
+pub struct IncrementalResult {
+    /// Whether the left subsystem has been verified.
+    pub left_verified: bool,
+    /// Whether the right subsystem has been verified.
+    pub right_verified: bool,
+    /// Whether the composition is sound (both verified).
+    pub composition_sound: bool,
+    /// Total number of test runs for the left subsystem.
+    pub left_tests_run: usize,
+    /// Total number of test runs for the right subsystem.
+    pub right_tests_run: usize,
+}
+
+impl std::fmt::Display for IncrementalResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Incremental composition: left={} ({}x), right={} ({}x), composed={}",
+            if self.left_verified { "PASS" } else { "PENDING" },
+            self.left_tests_run,
+            if self.right_verified { "PASS" } else { "PENDING" },
+            self.right_tests_run,
+            if self.composition_sound { "SOUND" } else { "INCOMPLETE" },
+        )
+    }
+}
