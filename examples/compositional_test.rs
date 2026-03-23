@@ -14,7 +14,7 @@ use proptest::prelude::*;
 use proptest::strategy::BoxedStrategy;
 
 use proptest_lockstep::prelude::*;
-use proptest_lockstep::compositional::{run_composed_test, verify_composition};
+use proptest_lockstep::compositional::{run_composed_test, verify_composition, IncrementalComposition};
 
 // ============================================================================
 // Subsystem A: Counter
@@ -212,5 +212,46 @@ mod tests {
         assert!(result.composition_sound);
         assert!(result.left_passes);
         assert!(result.right_passes);
+    }
+
+    /// Incremental compositional testing: test subsystems independently,
+    /// then re-test only the changed one after bridge refinement.
+    ///
+    /// The key guarantee (from `product_refines_bisim` in Lean):
+    /// refining one component's bridges doesn't invalidate the other
+    /// component's test results.
+    #[test]
+    fn incremental_composition() {
+        let mut comp = IncrementalComposition::new();
+
+        // Phase 1: test both subsystems
+        assert!(!comp.is_sound()); // nothing tested yet
+
+        comp.test_left::<CounterLockstep>(1..10);
+        assert!(!comp.is_sound()); // only left tested
+
+        comp.test_right::<LogLockstep>(1..10);
+        assert!(comp.is_sound()); // both pass → composition sound
+
+        let result = comp.result();
+        assert_eq!(result.left_tests_run, 1);
+        assert_eq!(result.right_tests_run, 1);
+
+        // Phase 2: "refine" Logger's bridges (simulate by re-testing)
+        // Counter's result is REUSED — not re-tested
+        comp.retest_right::<LogLockstep>(1..15);
+        assert!(comp.is_sound()); // still sound
+
+        let result = comp.result();
+        assert_eq!(result.left_tests_run, 1);  // counter NOT re-tested
+        assert_eq!(result.right_tests_run, 2);  // logger re-tested
+
+        // Phase 3: invalidate counter (simulate implementation change)
+        comp.invalidate_left();
+        assert!(!comp.is_sound()); // composition broken
+
+        // Re-test counter with the new implementation
+        comp.retest_left::<CounterLockstep>(1..10);
+        assert!(comp.is_sound()); // sound again
     }
 }
