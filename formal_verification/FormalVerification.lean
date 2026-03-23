@@ -13,6 +13,7 @@ import FormalVerification.DeriveBridge
 import FormalVerification.Compositional
 import FormalVerification.CommutativitySpec
 import FormalVerification.CrashRecovery
+import FormalVerification.CrashSessionObs
 import FormalVerification.EventualConsistency
 import FormalVerification.HierarchyStrictness
 import FormalVerification.SessionConsistency
