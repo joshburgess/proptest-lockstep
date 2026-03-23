@@ -371,3 +371,74 @@ theorem session_bisim_full_mono (sys : SessionSystem)
       intro a
       obtain ⟨hryw, hmr, hrest⟩ := hm a
       exact ⟨hryw, hmr, ih m' _ _ _ (by omega) hrest⟩
+
+-- =========================================================================
+-- Session-aware DPOR: cross-session commutativity
+-- =========================================================================
+
+/--
+  **Cross-session lookup independence**: looking up a session history
+  at session `s₁` is unaffected by an update at session `s₂ ≠ s₁`.
+  This is the foundational lemma for session-aware DPOR.
+-/
+theorem cross_session_lookup {S K O : Type} [DecidableEq S]
+    (hists : SessionHistories S K O)
+    (s₁ s₂ : S) (val : SessionHistory K O)
+    (hdiff : s₁ ≠ s₂) :
+    (fun s' => if s' = s₂ then val else hists s') s₁ = hists s₁ := by
+  simp [hdiff]
+
+/--
+  **Cross-session RYW independence**: the read-your-writes check for
+  session `s₁` is independent of history updates at session `s₂ ≠ s₁`.
+
+  If another session modifies the history, it doesn't affect the
+  RYW check for this session — because the `if s' = s₂` guard
+  routes to `hists s₁` (unchanged) when `s₁ ≠ s₂`.
+-/
+theorem cross_session_ryw_independent {S K O : Type}
+    [DecidableEq S] [DecidableEq K]
+    (hists : SessionHistories S K O)
+    (s₁ s₂ : S) (val : SessionHistory K O)
+    (k : K) (obs : O)
+    (hdiff : s₁ ≠ s₂) :
+    read_your_writes
+      ((fun s' => if s' = s₂ then val else hists s') s₁) k obs
+    = read_your_writes (hists s₁) k obs := by
+  simp [hdiff]
+
+/--
+  **Cross-session monotonic reads independence**: the monotonic reads
+  check for session `s₁` is independent of history updates at
+  session `s₂ ≠ s₁`.
+-/
+theorem cross_session_mr_independent {S K O : Type}
+    [DecidableEq S] [DecidableEq K]
+    (hists : SessionHistories S K O)
+    (s₁ s₂ : S) (val : SessionHistory K O)
+    (k : K) (obs : O) (obs_le : O → O → Prop)
+    (hdiff : s₁ ≠ s₂) :
+    monotonic_reads
+      ((fun s' => if s' = s₂ then val else hists s') s₁) k obs obs_le
+    = monotonic_reads (hists s₁) k obs obs_le := by
+  simp [hdiff]
+
+/--
+  **Cross-session history update commutativity**: if two history
+  updates target different sessions (`s₁ ≠ s₂`), applying them
+  in either order produces the same result.
+
+  This is the key structural lemma for session-aware DPOR: actions
+  from different sessions produce commuting history updates.
+-/
+theorem cross_session_update_commute {S K O : Type} [DecidableEq S]
+    (hists : SessionHistories S K O)
+    (s₁ s₂ : S) (v₁ v₂ : SessionHistory K O)
+    (hdiff : s₁ ≠ s₂) :
+    (fun s => if s = s₂ then v₂ else
+      (fun s' => if s' = s₁ then v₁ else hists s') s)
+    = (fun s => if s = s₁ then v₁ else
+      (fun s' => if s' = s₂ then v₂ else hists s') s) := by
+  funext s
+  simp only
+  split <;> split <;> simp_all
