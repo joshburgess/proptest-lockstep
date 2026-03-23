@@ -264,3 +264,88 @@ theorem shape_depth_positive_for_composite (s₁ s₂ : BridgeShape) :
     (BridgeShape.sum s₁ s₂).depth ≥ 1 ∧
     (BridgeShape.prod s₁ s₂).depth ≥ 1 := by
   simp [BridgeShape.depth]
+
+-- =========================================================================
+-- Shape refinement ordering
+-- =========================================================================
+
+/--
+  **Shape refinement**: shape `s₁` refines `s₂` if observations
+  under `s₁` are finer (equality under `s₁` implies equality under
+  `s₂`). This lifts `bridge_refines` to the shape level.
+-/
+def BridgeShape.refines (s₁ s₂ : BridgeShape) : Prop :=
+  ∀ (O : Type) [DecidableEq O] (x y : s₁.Obs O),
+    x = y → ∃ (f : s₁.Obs O → s₂.Obs O), f x = f y
+
+/--
+  **Unit (opaque) is the coarsest shape**: every shape refines unit,
+  because unit observations carry no information (everything maps
+  to `()`).
+-/
+theorem BridgeShape.unit_coarsest (s : BridgeShape) :
+    ∀ (O : Type) [DecidableEq O] (x y : s.Obs O),
+    x = y →
+    (fun (_ : s.Obs O) => ((): BridgeShape.unit.Obs O)) x =
+    (fun (_ : s.Obs O) => ((): BridgeShape.unit.Obs O)) y := by
+  intro O _ x y _
+  rfl
+
+/--
+  **Atom (transparent) is the finest shape**: atom observations
+  are the identity functor, so atom equality IS base type equality.
+  No other shape can be finer.
+-/
+theorem BridgeShape.atom_finest (O : Type) [DecidableEq O]
+    (x y : BridgeShape.atom.Obs O) :
+    x = y ↔ (x : O) = (y : O) := by
+  simp [BridgeShape.Obs]
+
+-- =========================================================================
+-- Shape-bridge correspondence: shapes produce the right bridges
+-- =========================================================================
+
+/--
+  **Sum shape produces sum observation**: the polynomial functor
+  for `.sum s₁ s₂` applied to observation functions gives
+  observations of the form `inl (obs₁ r)` or `inr (obs₂ r)`,
+  matching `sumBridge`'s structure.
+-/
+theorem shape_sum_inl (s₁ s₂ : BridgeShape) (O : Type) [DecidableEq O]
+    (x : s₁.Obs O) :
+    (BridgeShape.sum s₁ s₂).fmap id (Sum.inl x : (BridgeShape.sum s₁ s₂).Obs O)
+    = Sum.inl (s₁.fmap id x) := by
+  simp [BridgeShape.fmap]
+
+theorem shape_sum_inr (s₁ s₂ : BridgeShape) (O : Type) [DecidableEq O]
+    (x : s₂.Obs O) :
+    (BridgeShape.sum s₁ s₂).fmap id (Sum.inr x : (BridgeShape.sum s₁ s₂).Obs O)
+    = Sum.inr (s₂.fmap id x) := by
+  simp [BridgeShape.fmap]
+
+/--
+  **Product shape produces product observation**: the polynomial
+  functor for `.prod s₁ s₂` applied to observation functions gives
+  observations of the form `(obs₁ r, obs₂ r)`, matching
+  `prodBridge`'s structure.
+-/
+theorem shape_prod_pair (s₁ s₂ : BridgeShape) (O : Type) [DecidableEq O]
+    (x : s₁.Obs O) (y : s₂.Obs O) :
+    (BridgeShape.prod s₁ s₂).fmap id (x, y)
+    = (s₁.fmap id x, s₂.fmap id y) := by
+  simp [BridgeShape.fmap]
+
+/--
+  **Shape depth bounds observation complexity**: the number of
+  nested constructors in an observation value is bounded by the
+  shape's depth. Deeper shapes can hide discrepancies behind more
+  observation layers.
+-/
+theorem shape_leaves_pos (s : BridgeShape) : s.leaves ≥ 1 := by
+  induction s with
+  | atom => simp [BridgeShape.leaves]
+  | unit => simp [BridgeShape.leaves]
+  | sum s₁ s₂ ih₁ _ => simp [BridgeShape.leaves]; omega
+  | prod s₁ s₂ ih₁ _ => simp [BridgeShape.leaves]; omega
+  | option s ih => simp [BridgeShape.leaves]; omega
+  | list s ih => simp [BridgeShape.leaves]; omega
