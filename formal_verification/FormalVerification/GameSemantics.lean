@@ -288,3 +288,166 @@ theorem crash_witness_simplify_depth (a : A)
     (w : CrashWitness A) :
     (CrashWitness.crash_then w).depth < (CrashWitness.deeper a (.crash_then w)).depth := by
   simp [CrashWitness.depth]
+
+-- =========================================================================
+-- Crash bisimulation game semantic biconditional
+-- =========================================================================
+
+/--
+  **Parameterized crash bisimulation**: crash_bisim defined with
+  LockstepSystem + crash functions as separate parameters,
+  avoiding CrashRecoverySystem field projection issues.
+
+  This is definitionally equivalent to `crash_bisim sys n sm ss`
+  when given `sys.toLockstepSystem`, `sys.checkpoint`, etc.
+-/
+def crash_bisim_param {DS : Type} (ls : LockstepSystem)
+    (checkpoint : ls.SM → DS) (model_recover : DS → ls.SM)
+    (sut_recover : ls.SS → ls.SS) (invariant : ls.SM → Prop) :
+    Nat → ls.SM → ls.SS → Prop
+  | 0, _, _ => True
+  | n + 1, sm, ss =>
+    invariant sm
+    ∧ (∀ (a : ls.ActionIdx),
+        bridge_equiv (ls.bridge a) (ls.step_sut a ss).2 (ls.step_model a sm).2
+        ∧ crash_bisim_param ls checkpoint model_recover sut_recover invariant n
+          (ls.step_model a sm).1 (ls.step_sut a ss).1)
+    ∧ crash_bisim_param ls checkpoint model_recover sut_recover invariant n
+        (model_recover (checkpoint sm)) (sut_recover ss)
+
+/--
+  **Crash witness soundness** (backward direction, constructive):
+  a valid crash witness of depth ≤ n proves ¬crash_bisim_param.
+-/
+theorem crash_witness_soundness {DS : Type} (ls : LockstepSystem)
+    (checkpoint : ls.SM → DS) (model_recover : DS → ls.SM)
+    (sut_recover : ls.SS → ls.SS) (invariant : ls.SM → Prop)
+    (w : CrashWitness ls.ActionIdx) (n : Nat)
+    (sm : ls.SM) (ss : ls.SS)
+    (hvalid : crash_witness_valid ls checkpoint model_recover sut_recover invariant w sm ss)
+    (hdepth : w.depth ≤ n) :
+    ¬ crash_bisim_param ls checkpoint model_recover sut_recover invariant n sm ss := by
+  induction w generalizing sm ss n with
+  | bridge_fail a =>
+    intro h
+    match n with
+    | 0 => simp [CrashWitness.depth] at hdepth
+    | n' + 1 =>
+      simp only [crash_bisim_param] at h
+      exact hvalid (h.2.1 a).1
+  | invariant_fail =>
+    intro h
+    match n with
+    | 0 => simp [CrashWitness.depth] at hdepth
+    | n' + 1 =>
+      simp only [crash_bisim_param] at h
+      exact hvalid h.1
+  | deeper a w ih =>
+    intro h
+    match n with
+    | 0 => simp [CrashWitness.depth] at hdepth
+    | n' + 1 =>
+      simp only [crash_bisim_param] at h
+      simp only [crash_witness_valid] at hvalid
+      exact ih n' _ _ hvalid.2
+        (by simp [CrashWitness.depth] at hdepth; omega) (h.2.1 a).2
+  | crash_then w ih =>
+    intro h
+    match n with
+    | 0 => simp [CrashWitness.depth] at hdepth
+    | n' + 1 =>
+      simp only [crash_bisim_param] at h
+      exact ih n' _ _ hvalid
+        (by simp [CrashWitness.depth] at hdepth; omega) h.2.2
+
+/--
+  **Crash witness completeness** (forward direction, classical):
+  if crash_bisim_param fails at depth n, there exists a valid
+  crash witness of depth ≤ n.
+
+  This requires classical logic to extract the failing component
+  from ¬(invariant ∧ (∀ a, ...) ∧ crash_recurse), and bridge
+  decidability to determine whether the failure is at the bridge
+  or deeper.
+
+  The proof has FOUR branches (vs two for bisim_game_semantic):
+  1. Invariant failure → .invariant_fail
+  2. Bridge failure at some action → .bridge_fail a
+  3. Bridge passes but successor fails → .deeper a (recursive)
+  4. Crash-recovery successor fails → .crash_then (recursive)
+-/
+theorem crash_witness_completeness {DS : Type} (ls : LockstepSystem)
+    (checkpoint : ls.SM → DS) (model_recover : DS → ls.SM)
+    (sut_recover : ls.SS → ls.SS) (invariant : ls.SM → Prop)
+    (dinv : ∀ s, Decidable (invariant s))
+    (n : Nat) (sm : ls.SM) (ss : ls.SS)
+    (h : ¬ crash_bisim_param ls checkpoint model_recover sut_recover invariant n sm ss) :
+    ∃ (w : CrashWitness ls.ActionIdx),
+      crash_witness_valid ls checkpoint model_recover sut_recover invariant w sm ss
+      ∧ w.depth ≤ n := by
+  induction n generalizing sm ss with
+  | zero => exact absurd trivial h
+  | succ k ih =>
+    -- ¬(invariant ∧ (∀ a, bridge ∧ recurse) ∧ crash_recurse)
+    -- Split into four cases
+    have : Decidable (invariant sm) := dinv sm
+    by_cases hinv : invariant sm
+    · -- Invariant holds. Must be action or crash failure.
+      by_cases hcrash : crash_bisim_param ls checkpoint model_recover
+          sut_recover invariant k (model_recover (checkpoint sm)) (sut_recover ss)
+      · -- Crash recurse passes. Must be action failure.
+        have haction : ∃ a, ¬ (bridge_equiv (ls.bridge a)
+            (ls.step_sut a ss).2 (ls.step_model a sm).2
+          ∧ crash_bisim_param ls checkpoint model_recover sut_recover invariant k
+            (ls.step_model a sm).1 (ls.step_sut a ss).1) := by
+          exact Classical.byContradiction fun hall =>
+            h ⟨hinv, fun a => Classical.byContradiction fun ha =>
+              hall ⟨a, ha⟩, hcrash⟩
+        obtain ⟨a, ha⟩ := haction
+        -- Does bridge fail or does successor fail?
+        have hdec := bridge_equiv_decidable (ls.bridge a)
+            (ls.step_sut a ss).2 (ls.step_model a sm).2
+        match hdec with
+        | .isFalse hbf =>
+          exact ⟨.bridge_fail a, hbf, by simp [CrashWitness.depth]⟩
+        | .isTrue hbp =>
+          have hsucc : ¬ crash_bisim_param ls checkpoint model_recover
+              sut_recover invariant k
+              (ls.step_model a sm).1 (ls.step_sut a ss).1 := by
+            intro hc; exact ha ⟨hbp, hc⟩
+          obtain ⟨w, hv, hd⟩ := ih _ _ hsucc
+          exact ⟨.deeper a w, ⟨hbp, hv⟩, by simp [CrashWitness.depth]; omega⟩
+      · -- Crash recurse fails → .crash_then
+        obtain ⟨w, hv, hd⟩ := ih _ _ hcrash
+        exact ⟨.crash_then w, hv, by simp [CrashWitness.depth]; omega⟩
+    · -- Invariant fails → immediate witness
+      exact ⟨.invariant_fail, hinv, by simp [CrashWitness.depth]⟩
+
+/--
+  **THE CRASH BISIMULATION GAME SEMANTIC BICONDITIONAL**:
+  crash_bisim_param at depth n fails if and only if the Attacker
+  has a valid crash witness of depth ≤ n.
+
+  This extends `bisim_game_semantic` to crash-recovery systems
+  with four Attacker moves (action, crash, bridge_fail,
+  invariant_fail) and proves the same completeness and soundness
+  properties. The witness IS the minimal failing test case
+  including crash events.
+
+  Combined with `crash_witness_transparent_simplify`, this proves
+  that the crash explorer's search space (after pruning transparent
+  actions) is COMPLETE: every crash_bisim failure has a witness,
+  and pruning reduces witness depth without losing validity.
+-/
+theorem crash_bisim_game_semantic {DS : Type} (ls : LockstepSystem)
+    (checkpoint : ls.SM → DS) (model_recover : DS → ls.SM)
+    (sut_recover : ls.SS → ls.SS) (invariant : ls.SM → Prop)
+    (dinv : ∀ s, Decidable (invariant s))
+    (n : Nat) (sm : ls.SM) (ss : ls.SS) :
+    ¬ crash_bisim_param ls checkpoint model_recover sut_recover invariant n sm ss
+    ↔ ∃ (w : CrashWitness ls.ActionIdx),
+      crash_witness_valid ls checkpoint model_recover sut_recover invariant w sm ss
+      ∧ w.depth ≤ n :=
+  ⟨crash_witness_completeness ls checkpoint model_recover sut_recover invariant dinv n sm ss,
+   fun ⟨w, hv, hd⟩ => crash_witness_soundness ls checkpoint model_recover
+     sut_recover invariant w n sm ss hv hd⟩
