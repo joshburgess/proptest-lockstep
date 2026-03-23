@@ -300,3 +300,92 @@ theorem crash_transparent_eliminate_model
   -- The proof: split traces at boundaries, show the [action a, crash]
   -- segment produces the same state as [crash] via hchk_trans
   simp only [crash_model_after_append, crash_model_after, hchk_trans]
+
+-- =========================================================================
+-- Multi-pair crash-transparent elimination
+-- =========================================================================
+
+/--
+  **Reduce a crash trace**: eliminate all checkpoint-transparent
+  actions immediately before crash events. The function scans
+  left to right:
+
+  - `[action a, crash, ...]` where a is transparent → `[crash, ...]` (eliminated)
+  - `[action a, crash, ...]` where a is NOT transparent → keep both
+  - `[action a, ...]` (no crash after) → keep action
+  - `[crash, ...]` → keep crash
+
+  The `chk_transparent` predicate tells us which actions are
+  transparent at a given model state.
+-/
+def reduce_crash_trace
+    (sys : CrashSessionSystem)
+    (chk_transparent : sys.ActionIdx → sys.SM → Bool) :
+    List (CrashEvent sys.ActionIdx) → sys.SM →
+    List (CrashEvent sys.ActionIdx)
+  | [], _ => []
+  | .action a :: .crash :: rest, sm =>
+    if chk_transparent a sm then
+      -- Eliminate: transparent action before crash
+      .crash :: reduce_crash_trace sys chk_transparent rest
+        (sys.model_recover (sys.checkpoint sm))
+    else
+      -- Keep: non-transparent action before crash
+      .action a :: .crash :: reduce_crash_trace sys chk_transparent rest
+        (sys.model_recover (sys.checkpoint (sys.step_model a sm).1))
+  | .action a :: rest, sm =>
+    .action a :: reduce_crash_trace sys chk_transparent rest
+      (sys.step_model a sm).1
+  | .crash :: rest, sm =>
+    .crash :: reduce_crash_trace sys chk_transparent rest
+      (sys.model_recover (sys.checkpoint sm))
+
+/--
+  **MULTI-PAIR ELIMINATION PRESERVES FINAL STATE**: reducing a
+  crash trace by eliminating all checkpoint-transparent actions
+  before crash points produces the same final model state.
+
+  The proof uses structural induction on the trace, applying
+  checkpoint transparency at each [transparent, crash] pair.
+  This is the genuine multi-pair version of
+  `crash_transparent_eliminate_model`.
+-/
+theorem reduce_crash_trace_preserves_state
+    (sys : CrashSessionSystem)
+    (chk_transparent : sys.ActionIdx → sys.SM → Bool)
+    -- The predicate correctly identifies transparent actions
+    (hcorrect : ∀ a sm, chk_transparent a sm = true →
+      sys.checkpoint (sys.step_model a sm).1 = sys.checkpoint sm) :
+    ∀ (trace : List (CrashEvent sys.ActionIdx)) (sm : sys.SM),
+    crash_model_after sys (reduce_crash_trace sys chk_transparent trace sm) sm
+    = crash_model_after sys trace sm := by
+  intro trace
+  -- Structural induction following reduce_crash_trace's recursion
+  match trace with
+  | [] => intro _; rfl
+  | .action a :: .crash :: rest =>
+    intro sm
+    simp only [reduce_crash_trace]
+    split
+    · -- Transparent: eliminated
+      rename_i htrans
+      simp only [crash_model_after]
+      rw [hcorrect a sm htrans]
+      exact reduce_crash_trace_preserves_state sys chk_transparent hcorrect
+        rest (sys.model_recover (sys.checkpoint sm))
+    · -- Not transparent: kept
+      simp only [crash_model_after]
+      exact reduce_crash_trace_preserves_state sys chk_transparent hcorrect
+        rest _
+  | [.action a] =>
+    intro sm; simp only [reduce_crash_trace, crash_model_after]
+  | .action a :: .action b :: rest =>
+    intro sm
+    simp only [reduce_crash_trace, crash_model_after]
+    exact reduce_crash_trace_preserves_state sys chk_transparent hcorrect
+      (.action b :: rest) (sys.step_model a sm).1
+  | .crash :: rest =>
+    intro sm
+    simp only [reduce_crash_trace, crash_model_after]
+    exact reduce_crash_trace_preserves_state sys chk_transparent hcorrect
+      rest (sys.model_recover (sys.checkpoint sm))
