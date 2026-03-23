@@ -16,6 +16,7 @@ import FormalVerification.CrashRecovery
 import FormalVerification.CrashLinearizability
 import FormalVerification.CrashSessionObs
 import FormalVerification.EventualConsistency
+import FormalVerification.GameSemantics
 import FormalVerification.HierarchyStrictness
 import FormalVerification.SessionConsistency
 import FormalVerification.Invariant
