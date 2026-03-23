@@ -186,3 +186,105 @@ theorem bisim_game_semantic (sys : LockstepSystem)
         witness_valid sys w sm ss ∧ w.depth ≤ n :=
   ⟨not_bisim_implies_witness sys n sm ss,
    fun ⟨w, hv, hd⟩ => witness_implies_not_bisim sys w n sm ss hv hd⟩
+
+-- =========================================================================
+-- Crash-aware game semantics
+-- =========================================================================
+
+/--
+  A **crash-aware witness**: the Attacker's strategy in the crash
+  bisimulation game. Extends `BisimWitness` with crash moves:
+
+  - `bridge_fail a`: bridge failure at action a (immediate win)
+  - `invariant_fail`: the model invariant fails (immediate win)
+  - `deeper a w`: action a passes, continue with witness w
+  - `crash_then w`: crash (recover), continue with witness w
+
+  The crash move is the key addition: the Attacker can choose to
+  crash the system and continue playing from the recovered state.
+-/
+inductive CrashWitness (A : Type) where
+  | bridge_fail : A → CrashWitness A
+  | invariant_fail : CrashWitness A
+  | deeper : A → CrashWitness A → CrashWitness A
+  | crash_then : CrashWitness A → CrashWitness A
+
+/--
+  Validity of a crash-aware witness at model/SUT states.
+-/
+def crash_witness_valid (ls : LockstepSystem)
+    (checkpoint : ls.SM → DS) (model_recover : DS → ls.SM)
+    (sut_recover : ls.SS → ls.SS) (invariant : ls.SM → Prop) :
+    CrashWitness ls.ActionIdx → ls.SM → ls.SS → Prop
+  | .bridge_fail a, sm, ss =>
+    ¬ bridge_equiv (ls.bridge a) (ls.step_sut a ss).2 (ls.step_model a sm).2
+  | .invariant_fail, sm, _ =>
+    ¬ invariant sm
+  | .deeper a w, sm, ss =>
+    bridge_equiv (ls.bridge a) (ls.step_sut a ss).2 (ls.step_model a sm).2
+    ∧ crash_witness_valid ls checkpoint model_recover sut_recover invariant w
+      (ls.step_model a sm).1 (ls.step_sut a ss).1
+  | .crash_then w, sm, ss =>
+    crash_witness_valid ls checkpoint model_recover sut_recover invariant w
+      (model_recover (checkpoint sm)) (sut_recover ss)
+
+/-- Depth of a crash-aware witness. -/
+def CrashWitness.depth : CrashWitness A → Nat
+  | .bridge_fail _ => 1
+  | .invariant_fail => 1
+  | .deeper _ w => 1 + w.depth
+  | .crash_then w => 1 + w.depth
+
+-- =========================================================================
+-- Witness simplification: crash-transparent elimination
+-- =========================================================================
+
+/--
+  **CRASH-TRANSPARENT WITNESS SIMPLIFICATION**: if a crash witness
+  contains `deeper a (crash_then w)` (action a followed by crash)
+  and action a is crash-transparent, the witness can be simplified
+  to `crash_then w'` where w' is w with states adjusted.
+
+  This is the game-semantic version of crash_transparent_eliminate:
+  the Attacker's strategy `[action a, crash, ...]` is DOMINATED by
+  `[crash, ...]` when a is crash-transparent. The Attacker gains
+  nothing by playing a before crashing.
+
+  The proof shows: the simplified witness is valid wherever the
+  original is valid, with strictly smaller depth. This means the
+  crash-interleaving explorer can prune [transparent, crash]
+  sequences from its search space without missing any winning
+  strategy.
+-/
+theorem crash_witness_transparent_simplify {DS : Type}
+    (ls : LockstepSystem)
+    (a : ls.ActionIdx) (w : CrashWitness ls.ActionIdx)
+    (sm : ls.SM) (ss : ls.SS)
+    (checkpoint : ls.SM → DS) (model_recover : DS → ls.SM)
+    (sut_recover : ls.SS → ls.SS) (invariant : ls.SM → Prop)
+    (hchk : checkpoint (ls.step_model a sm).1 = checkpoint sm)
+    (hsut : sut_recover (ls.step_sut a ss).1 = sut_recover ss)
+    -- The [action a, crash, w] witness is valid
+    (hvalid : crash_witness_valid ls checkpoint model_recover sut_recover invariant
+      (.deeper a (.crash_then w)) sm ss) :
+    -- Then the simplified [crash, w] witness is ALSO valid
+    crash_witness_valid ls checkpoint model_recover sut_recover invariant
+      (.crash_then w) sm ss := by
+  -- hvalid.2 : crash_witness_valid ... w
+  --   (model_recover (checkpoint (step_model a sm).1))
+  --   (sut_recover (step_sut a ss).1)
+  -- Goal: crash_witness_valid ... w
+  --   (model_recover (checkpoint sm))
+  --   (sut_recover ss)
+  simp only [crash_witness_valid] at hvalid ⊢
+  rw [← hchk, ← hsut]
+  exact hvalid.2
+
+/--
+  **Simplified witness has smaller depth**: the crash-then witness
+  is strictly shallower than the deeper-crash_then witness.
+-/
+theorem crash_witness_simplify_depth (a : A)
+    (w : CrashWitness A) :
+    (CrashWitness.crash_then w).depth < (CrashWitness.deeper a (.crash_then w)).depth := by
+  simp [CrashWitness.depth]
