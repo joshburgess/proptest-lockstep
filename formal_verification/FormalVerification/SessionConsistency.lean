@@ -23,6 +23,7 @@
 -/
 
 import FormalVerification.Invariant
+import FormalVerification.DPOR
 
 -- =========================================================================
 -- Session system
@@ -442,3 +443,50 @@ theorem cross_session_update_commute {S K O : Type} [DecidableEq S]
   funext s
   simp only
   split <;> split <;> simp_all
+
+-- =========================================================================
+-- Session commutativity: the combined condition for session DPOR
+-- =========================================================================
+
+/--
+  Two actions **session-commute** if they satisfy three conditions:
+  1. They are from different sessions (history updates commute)
+  2. The model states commute (`model_commute`)
+  3. The SUT states commute (successor states are equal in both orders)
+
+  When session_commute holds, the session-specific checks (RYW,
+  monotonic reads) and history updates are order-independent
+  (by the cross_session_* lemmas), and the underlying state
+  transitions are order-independent (by model/SUT commutativity).
+
+  This is a **strictly weaker** requirement than checking commutativity
+  without session awareness: the history commutativity comes for free
+  from session isolation, so the user only needs to verify
+  model_commute + SUT state commutativity.
+-/
+def session_commute (sys : SessionSystem) (a b : sys.ActionIdx)
+    (sm : sys.SM) (ss : sys.SS) : Prop :=
+  -- Different sessions (or at least one is not session-tagged)
+  (match sys.session_of a, sys.session_of b with
+    | some sa, some sb => sa ≠ sb
+    | _, _ => True)  -- non-session actions commute freely with sessions
+  -- Model states commute
+  ∧ model_commute sys.toLockstepSystem a b sm
+  -- SUT successor states commute
+  ∧ (sys.step_sut b (sys.step_sut a ss).1).1 =
+    (sys.step_sut a (sys.step_sut b ss).1).1
+
+/--
+  **Session commutativity is symmetric.**
+-/
+theorem session_commute_sym (sys : SessionSystem) (a b : sys.ActionIdx)
+    (sm : sys.SM) (ss : sys.SS)
+    (h : session_commute sys a b sm ss) :
+    session_commute sys b a sm ss := by
+  obtain ⟨hdiff, hmodel, hsut⟩ := h
+  refine ⟨?_, commute_sym sys.toLockstepSystem a b sm hmodel, hsut.symm⟩
+  match ha : sys.session_of a, hb : sys.session_of b with
+  | some sa, some sb => simp [ha, hb] at hdiff ⊢; exact Ne.symm hdiff
+  | some _, none => simp [ha, hb]
+  | none, some _ => simp [ha, hb]
+  | none, none => simp [ha, hb]
