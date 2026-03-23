@@ -23,6 +23,7 @@
 -/
 
 import FormalVerification.Invariant
+import FormalVerification.DPOR
 
 -- =========================================================================
 -- Session system
@@ -371,3 +372,121 @@ theorem session_bisim_full_mono (sys : SessionSystem)
       intro a
       obtain ⟨hryw, hmr, hrest⟩ := hm a
       exact ⟨hryw, hmr, ih m' _ _ _ (by omega) hrest⟩
+
+-- =========================================================================
+-- Session-aware DPOR: cross-session commutativity
+-- =========================================================================
+
+/--
+  **Cross-session lookup independence**: looking up a session history
+  at session `s₁` is unaffected by an update at session `s₂ ≠ s₁`.
+  This is the foundational lemma for session-aware DPOR.
+-/
+theorem cross_session_lookup {S K O : Type} [DecidableEq S]
+    (hists : SessionHistories S K O)
+    (s₁ s₂ : S) (val : SessionHistory K O)
+    (hdiff : s₁ ≠ s₂) :
+    (fun s' => if s' = s₂ then val else hists s') s₁ = hists s₁ := by
+  simp [hdiff]
+
+/--
+  **Cross-session RYW independence**: the read-your-writes check for
+  session `s₁` is independent of history updates at session `s₂ ≠ s₁`.
+
+  If another session modifies the history, it doesn't affect the
+  RYW check for this session — because the `if s' = s₂` guard
+  routes to `hists s₁` (unchanged) when `s₁ ≠ s₂`.
+-/
+theorem cross_session_ryw_independent {S K O : Type}
+    [DecidableEq S] [DecidableEq K]
+    (hists : SessionHistories S K O)
+    (s₁ s₂ : S) (val : SessionHistory K O)
+    (k : K) (obs : O)
+    (hdiff : s₁ ≠ s₂) :
+    read_your_writes
+      ((fun s' => if s' = s₂ then val else hists s') s₁) k obs
+    = read_your_writes (hists s₁) k obs := by
+  simp [hdiff]
+
+/--
+  **Cross-session monotonic reads independence**: the monotonic reads
+  check for session `s₁` is independent of history updates at
+  session `s₂ ≠ s₁`.
+-/
+theorem cross_session_mr_independent {S K O : Type}
+    [DecidableEq S] [DecidableEq K]
+    (hists : SessionHistories S K O)
+    (s₁ s₂ : S) (val : SessionHistory K O)
+    (k : K) (obs : O) (obs_le : O → O → Prop)
+    (hdiff : s₁ ≠ s₂) :
+    monotonic_reads
+      ((fun s' => if s' = s₂ then val else hists s') s₁) k obs obs_le
+    = monotonic_reads (hists s₁) k obs obs_le := by
+  simp [hdiff]
+
+/--
+  **Cross-session history update commutativity**: if two history
+  updates target different sessions (`s₁ ≠ s₂`), applying them
+  in either order produces the same result.
+
+  This is the key structural lemma for session-aware DPOR: actions
+  from different sessions produce commuting history updates.
+-/
+theorem cross_session_update_commute {S K O : Type} [DecidableEq S]
+    (hists : SessionHistories S K O)
+    (s₁ s₂ : S) (v₁ v₂ : SessionHistory K O)
+    (hdiff : s₁ ≠ s₂) :
+    (fun s => if s = s₂ then v₂ else
+      (fun s' => if s' = s₁ then v₁ else hists s') s)
+    = (fun s => if s = s₁ then v₁ else
+      (fun s' => if s' = s₂ then v₂ else hists s') s) := by
+  funext s
+  simp only
+  split <;> split <;> simp_all
+
+-- =========================================================================
+-- Session commutativity: the combined condition for session DPOR
+-- =========================================================================
+
+/--
+  Two actions **session-commute** if they satisfy three conditions:
+  1. They are from different sessions (history updates commute)
+  2. The model states commute (`model_commute`)
+  3. The SUT states commute (successor states are equal in both orders)
+
+  When session_commute holds, the session-specific checks (RYW,
+  monotonic reads) and history updates are order-independent
+  (by the cross_session_* lemmas), and the underlying state
+  transitions are order-independent (by model/SUT commutativity).
+
+  This is a **strictly weaker** requirement than checking commutativity
+  without session awareness: the history commutativity comes for free
+  from session isolation, so the user only needs to verify
+  model_commute + SUT state commutativity.
+-/
+def session_commute (sys : SessionSystem) (a b : sys.ActionIdx)
+    (sm : sys.SM) (ss : sys.SS) : Prop :=
+  -- Different sessions (or at least one is not session-tagged)
+  (match sys.session_of a, sys.session_of b with
+    | some sa, some sb => sa ≠ sb
+    | _, _ => True)  -- non-session actions commute freely with sessions
+  -- Model states commute
+  ∧ model_commute sys.toLockstepSystem a b sm
+  -- SUT successor states commute
+  ∧ (sys.step_sut b (sys.step_sut a ss).1).1 =
+    (sys.step_sut a (sys.step_sut b ss).1).1
+
+/--
+  **Session commutativity is symmetric.**
+-/
+theorem session_commute_sym (sys : SessionSystem) (a b : sys.ActionIdx)
+    (sm : sys.SM) (ss : sys.SS)
+    (h : session_commute sys a b sm ss) :
+    session_commute sys b a sm ss := by
+  obtain ⟨hdiff, hmodel, hsut⟩ := h
+  refine ⟨?_, commute_sym sys.toLockstepSystem a b sm hmodel, hsut.symm⟩
+  match ha : sys.session_of a, hb : sys.session_of b with
+  | some sa, some sb => simp [ha, hb] at hdiff ⊢; exact Ne.symm hdiff
+  | some _, none => simp [ha, hb]
+  | none, some _ => simp [ha, hb]
+  | none, none => simp [ha, hb]
