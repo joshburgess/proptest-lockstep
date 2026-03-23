@@ -27,6 +27,7 @@ import FormalVerification.Lockstep
 import FormalVerification.ObservationalRefinement
 import FormalVerification.OpaqueDetection
 import FormalVerification.Precondition
+import FormalVerification.PolynomialBridge
 import FormalVerification.Projection
 import FormalVerification.Regression
 import FormalVerification.Runner
