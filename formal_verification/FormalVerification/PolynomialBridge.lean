@@ -266,86 +266,148 @@ theorem shape_depth_positive_for_composite (s₁ s₂ : BridgeShape) :
   simp [BridgeShape.depth]
 
 -- =========================================================================
--- Shape refinement ordering
+-- Structural shape refinement
 -- =========================================================================
 
 /--
-  **Shape refinement**: shape `s₁` refines `s₂` if observations
-  under `s₁` are finer (equality under `s₁` implies equality under
-  `s₂`). This lifts `bridge_refines` to the shape level.
--/
-def BridgeShape.refines (s₁ s₂ : BridgeShape) : Prop :=
-  ∀ (O : Type) [DecidableEq O] (x y : s₁.Obs O),
-    x = y → ∃ (f : s₁.Obs O → s₂.Obs O), f x = f y
+  **Structural shape refinement**: shape `s₁` refines `s₂` if `s₁`
+  has `atom` (transparent) at every position where `s₂` has `atom`,
+  and may additionally have `atom` where `s₂` has `unit` (opaque).
+  Both shapes must have the same composite structure.
 
-/--
-  **Unit (opaque) is the coarsest shape**: every shape refines unit,
-  because unit observations carry no information (everything maps
-  to `()`).
+  This is the polynomial functor version of bridge refinement:
+  replacing opaque leaves with transparent leaves makes the
+  observation finer.
 -/
-theorem BridgeShape.unit_coarsest (s : BridgeShape) :
-    ∀ (O : Type) [DecidableEq O] (x y : s.Obs O),
-    x = y →
-    (fun (_ : s.Obs O) => ((): BridgeShape.unit.Obs O)) x =
-    (fun (_ : s.Obs O) => ((): BridgeShape.unit.Obs O)) y := by
-  intro O _ x y _
-  rfl
-
-/--
-  **Atom (transparent) is the finest shape**: atom observations
-  are the identity functor, so atom equality IS base type equality.
-  No other shape can be finer.
--/
-theorem BridgeShape.atom_finest (O : Type) [DecidableEq O]
-    (x y : BridgeShape.atom.Obs O) :
-    x = y ↔ (x : O) = (y : O) := by
-  simp [BridgeShape.Obs]
+inductive ShapeRefines : BridgeShape → BridgeShape → Type
+  | refl (s) : ShapeRefines s s
+  | atom_unit : ShapeRefines .atom .unit
+  | sum (h₁ : ShapeRefines s₁ t₁) (h₂ : ShapeRefines s₂ t₂) :
+      ShapeRefines (.sum s₁ s₂) (.sum t₁ t₂)
+  | prod (h₁ : ShapeRefines s₁ t₁) (h₂ : ShapeRefines s₂ t₂) :
+      ShapeRefines (.prod s₁ s₂) (.prod t₁ t₂)
+  | option (h : ShapeRefines s t) :
+      ShapeRefines (.option s) (.option t)
+  | list (h : ShapeRefines s t) :
+      ShapeRefines (.list s) (.list t)
 
 -- =========================================================================
--- Shape-bridge correspondence: shapes produce the right bridges
+-- Coarsening map: the natural transformation between shapes
 -- =========================================================================
 
 /--
-  **Sum shape produces sum observation**: the polynomial functor
-  for `.sum s₁ s₂` applied to observation functions gives
-  observations of the form `inl (obs₁ r)` or `inr (obs₂ r)`,
-  matching `sumBridge`'s structure.
--/
-theorem shape_sum_inl (s₁ s₂ : BridgeShape) (O : Type) [DecidableEq O]
-    (x : s₁.Obs O) :
-    (BridgeShape.sum s₁ s₂).fmap id (Sum.inl x : (BridgeShape.sum s₁ s₂).Obs O)
-    = Sum.inl (s₁.fmap id x) := by
-  simp [BridgeShape.fmap]
+  **Coarsening map**: given a proof that `s₁` refines `s₂`,
+  construct the map from finer observations to coarser observations.
 
-theorem shape_sum_inr (s₁ s₂ : BridgeShape) (O : Type) [DecidableEq O]
-    (x : s₂.Obs O) :
-    (BridgeShape.sum s₁ s₂).fmap id (Sum.inr x : (BridgeShape.sum s₁ s₂).Obs O)
-    = Sum.inr (s₂.fmap id x) := by
-  simp [BridgeShape.fmap]
+  - `atom → unit`: discard the observation (`fun _ => ()`)
+  - `atom → atom`: identity
+  - Composites: apply coarsening pointwise to sub-observations
 
-/--
-  **Product shape produces product observation**: the polynomial
-  functor for `.prod s₁ s₂` applied to observation functions gives
-  observations of the form `(obs₁ r, obs₂ r)`, matching
-  `prodBridge`'s structure.
+  This is the natural transformation between the polynomial functors
+  ⟦s₁⟧ and ⟦s₂⟧ induced by the refinement.
 -/
-theorem shape_prod_pair (s₁ s₂ : BridgeShape) (O : Type) [DecidableEq O]
-    (x : s₁.Obs O) (y : s₂.Obs O) :
-    (BridgeShape.prod s₁ s₂).fmap id (x, y)
-    = (s₁.fmap id x, s₂.fmap id y) := by
-  simp [BridgeShape.fmap]
+def ShapeRefines.coarsen : ShapeRefines s₁ s₂ →
+    ∀ (O : Type), s₁.Obs O → s₂.Obs O
+  | .refl _, _, x => x
+  | .atom_unit, _, _ => ()
+  | .sum h₁ h₂, O, x => match x with
+    | .inl x => .inl (h₁.coarsen O x)
+    | .inr x => .inr (h₂.coarsen O x)
+  | .prod h₁ h₂, O, (x, y) => (h₁.coarsen O x, h₂.coarsen O y)
+  | .option h, O, x => match x with
+    | some v => some (h.coarsen O v)
+    | none => none
+  | .list h, O, xs => xs.map (h.coarsen O)
+
+-- =========================================================================
+-- THE CONNECTION: ShapeRefines → bridge_refines
+-- =========================================================================
 
 /--
-  **Shape depth bounds observation complexity**: the number of
-  nested constructors in an observation value is bounded by the
-  shape's depth. Deeper shapes can hide discrepancies behind more
-  observation layers.
+  **Shape refinement induces bridge refinement**: if shape `s₁`
+  refines shape `s₂`, then any bridge built from `s₁` refines the
+  corresponding bridge built from `s₂` (with coarsened observations).
+
+  This is the key theorem connecting the polynomial functor story
+  to the bridge algebra story: the abstract shape refinement
+  (`ShapeRefines`) implies the concrete bridge refinement
+  (`bridge_refines`), which in turn implies stronger bisimulation
+  guarantees (via `refines_strengthen_bisim`).
+
+  The full chain:
+    ShapeRefines s₁ s₂
+    → bridge_refines (shapeBridge s₁ ...) (shapeBridge s₂ ...)
+    → bounded_bisim under s₁ implies bounded_bisim under s₂
+    → finer shapes give stronger testing guarantees
 -/
-theorem shape_leaves_pos (s : BridgeShape) : s.leaves ≥ 1 := by
-  induction s with
-  | atom => simp [BridgeShape.leaves]
-  | unit => simp [BridgeShape.leaves]
-  | sum s₁ s₂ ih₁ _ => simp [BridgeShape.leaves]; omega
-  | prod s₁ s₂ ih₁ _ => simp [BridgeShape.leaves]; omega
-  | option s ih => simp [BridgeShape.leaves]; omega
-  | list s ih => simp [BridgeShape.leaves]; omega
+theorem shape_refines_bridge_refines
+    (href : ShapeRefines s₁ s₂)
+    (O : Type) [DecidableEq O]
+    (obs_r : R → s₁.Obs O) (obs_m : M → s₁.Obs O) :
+    bridge_refines
+      (shapeBridge s₁ O obs_r obs_m)
+      (shapeBridge s₂ O (href.coarsen O ∘ obs_r) (href.coarsen O ∘ obs_m)) := by
+  intro r m h
+  unfold bridge_equiv shapeBridge at *
+  show href.coarsen O (obs_r r) = href.coarsen O (obs_m m)
+  exact congrArg (href.coarsen O) h
+
+/--
+  **Coarsening preserves fmap**: the coarsening map commutes with
+  the polynomial functor's action on morphisms. This is the
+  naturality condition — coarsening is a natural transformation.
+
+  `coarsen ∘ fmap_s₁ f = fmap_s₂ f ∘ coarsen`
+-/
+theorem ShapeRefines.coarsen_natural
+    (href : ShapeRefines s₁ s₂)
+    {A B : Type} (f : A → B) :
+    ∀ (x : s₁.Obs A),
+    href.coarsen B (s₁.fmap f x) = s₂.fmap f (href.coarsen A x) := by
+  induction href with
+  | refl => intro x; rfl
+  | atom_unit => intro _; rfl
+  | sum h₁ h₂ ih₁ ih₂ =>
+    intro x
+    match x with
+    | .inl v => simp [ShapeRefines.coarsen, BridgeShape.fmap, ih₁ v]
+    | .inr v => simp [ShapeRefines.coarsen, BridgeShape.fmap, ih₂ v]
+  | prod h₁ h₂ ih₁ ih₂ =>
+    intro ⟨x, y⟩
+    simp [ShapeRefines.coarsen, BridgeShape.fmap, ih₁ x, ih₂ y]
+  | option h ih =>
+    intro x
+    match x with
+    | some v => simp [ShapeRefines.coarsen, BridgeShape.fmap, ih v]
+    | none => rfl
+  | list h ih =>
+    intro x
+    simp [ShapeRefines.coarsen, BridgeShape.fmap]
+    induction x with
+    | nil => rfl
+    | cons hd tl ihtl => simp [ih hd, ihtl]
+
+/--
+  **Shape refinement is transitive**: if s₁ refines s₂ and s₂
+  refines s₃, then s₁ refines s₃.
+-/
+def ShapeRefines.trans :
+    ShapeRefines s₁ s₂ → ShapeRefines s₂ s₃ → ShapeRefines s₁ s₃
+  | .refl _, h₂₃ => h₂₃
+  | .atom_unit, .refl _ => .atom_unit
+  | .sum h₁ h₂, .refl _ => .sum h₁ h₂
+  | .sum h₁ h₂, .sum h₃ h₄ => .sum (h₁.trans h₃) (h₂.trans h₄)
+  | .prod h₁ h₂, .refl _ => .prod h₁ h₂
+  | .prod h₁ h₂, .prod h₃ h₄ => .prod (h₁.trans h₃) (h₂.trans h₄)
+  | .option h, .refl _ => .option h
+  | .option h, .option h₃ => .option (h.trans h₃)
+  | .list h, .refl _ => .list h
+  | .list h, .list h₃ => .list (h.trans h₃)
+
+/--
+  **Atom refines everything**: the atom shape (transparent) refines
+  any shape with the same structure that uses unit at leaves.
+  This is the polynomial version of "transparent is finest."
+-/
+def atom_refines_unit : ShapeRefines .atom .unit :=
+  ShapeRefines.atom_unit
