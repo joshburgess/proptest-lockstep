@@ -10,7 +10,7 @@
   A violation is when the spec says "commute" but the model disagrees.
 
   Key result: if the commutativity spec is sound, then DPOR using the
-  spec as its oracle is also sound — connecting commutativity specs
+  spec as its oracle is also sound -- connecting commutativity specs
   to the existing DPOR soundness formalization.
 
   Corresponds to `CommutativitySpecModel` in `src/commutativity.rs`.

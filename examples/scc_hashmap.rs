@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-//! scc::HashMap lockstep test — testing a real concurrent HashMap.
+//! scc::HashMap lockstep test -- testing a real concurrent HashMap.
 //!
 //! Tests `scc::HashMap` (scalable concurrent HashMap) against a
 //! sequential `std::collections::HashMap` model. `scc` is a newer
@@ -20,7 +20,7 @@ use proptest::strategy::BoxedStrategy;
 use proptest_lockstep::prelude::*;
 
 // ============================================================================
-// Model — sequential HashMap
+// Model -- sequential HashMap
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,7 +42,7 @@ impl MapModel {
 
 #[proptest_lockstep::lockstep_actions(state = MapModel)]
 pub mod hm {
-    // scc::HashMap::insert returns Result<(), (K, V)> — Err if key exists.
+    // scc::HashMap::insert returns Result<(), (K, V)> -- Err if key exists.
     // We simplify: return whether the insert succeeded.
     #[action(real_return = "bool")]
     pub struct Insert {
@@ -50,7 +50,7 @@ pub mod hm {
         pub value: String,
     }
 
-    // scc::HashMap::upsert returns Option<V> — the previous value.
+    // scc::HashMap::upsert returns Option<V> -- the previous value.
     #[action(real_return = "Option<String>")]
     pub struct Upsert {
         pub key: String,

@@ -4,7 +4,7 @@
 //! Unlike the simple WAL example (where every append is immediately
 //! durable), this log **buffers writes** and only persists them on
 //! explicit `flush()`. A crash between flushes loses the current
-//! batch — this is the data-loss window.
+//! batch -- this is the data-loss window.
 //!
 //! This is a realistic pattern: databases, message queues, and file
 //! systems all batch writes for performance. The crash-recovery
@@ -31,7 +31,7 @@ use proptest_lockstep::invariant::InvariantModel;
 use proptest_lockstep::crash_recovery::{CrashRecoveryModel, CrashRecoveryConfig};
 
 // ============================================================================
-// Batched log — SUT
+// Batched log -- SUT
 // ============================================================================
 
 /// An append-only log with batched writes.
@@ -100,7 +100,7 @@ impl BatchedLog {
 }
 
 // ============================================================================
-// Model — tracks both durable and total state
+// Model -- tracks both durable and total state
 // ============================================================================
 
 /// The model tracks the full log (all appends) AND the durable

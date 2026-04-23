@@ -4,7 +4,7 @@
   Proves that the polynomial bridge derivation is monotone in
   refinement: replacing a component bridge with a finer one produces
   a finer composite bridge. This is the key property for the proc
-  macro's `derive_bridge` function — users control observation
+  macro's `derive_bridge` function -- users control observation
   precision by choosing transparent vs opaque at each leaf, and
   composition preserves the refinement ordering.
 

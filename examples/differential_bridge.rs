@@ -3,14 +3,14 @@
 //!
 //! Shows how the framework detects overly-coarse bridges that hide
 //! real discrepancies. Uses a file system where the `Open` action's
-//! bridge uses `Opaque` for handles — but the handles actually
+//! bridge uses `Opaque` for handles -- but the handles actually
 //! differ in a detectable way.
 //!
 //! Two tests demonstrate the differential technique:
 //! 1. A system where handles INTENTIONALLY differ (opaque is correct)
-//!    — no bridge weakness detected
+//!    -- no bridge weakness detected
 //! 2. A system where handles ACCIDENTALLY differ (opaque hides a bug)
-//!    — bridge weakness detected
+//!    -- bridge weakness detected
 //!
 //! Run with: `cargo test --example differential_bridge`
 
@@ -31,7 +31,7 @@ use proptest_lockstep::differential::{DifferentialBridgeModel, DifferentialConfi
 #[derive(Debug, Clone, PartialEq)]
 struct RealHandle(u64);
 
-/// Model handle: wraps an ID — may differ from real handle.
+/// Model handle: wraps an ID -- may differ from real handle.
 #[derive(Debug, Clone, PartialEq)]
 struct ModelHandle(u64);
 
@@ -59,7 +59,7 @@ impl Registry {
     }
 }
 
-/// Model registry — assigns IDs differently (offset by 1000).
+/// Model registry -- assigns IDs differently (offset by 1000).
 /// This simulates the common case where model and SUT use different
 /// ID schemes but are semantically equivalent.
 #[derive(Debug, Clone, PartialEq)]
@@ -104,7 +104,7 @@ pub mod reg {
         pub value: String,
     }
 
-    // Lookup returns the value — uses Transparent (should match exactly).
+    // Lookup returns the value -- uses Transparent (should match exactly).
     #[action(real_return = "Option<String>")]
     pub struct Lookup {
         pub id: u64,
@@ -145,7 +145,7 @@ impl LockstepModel for RegistryLockstep {
     fn init_sut() -> Registry { Registry::new() }
     fn gen_action(_: &ModelRegistry, _: &TypedEnv) -> BoxedStrategy<Box<dyn AnyAction>> {
         let vals = vec!["alice", "bob", "charlie"];
-        // Only Create actions — Lookup by raw ID doesn't work when
+        // Only Create actions -- Lookup by raw ID doesn't work when
         // model and SUT use different ID schemes. (In a full test,
         // you'd use GVar/opaque handle resolution for lookups.)
         proptest::sample::select(vals)
@@ -188,7 +188,7 @@ impl DifferentialBridgeModel for RegistryLockstep {
                 }
             }
             reg::AnyRegAction::Lookup(_) => {
-                // Lookup uses Transparent already — fine check is the same
+                // Lookup uses Transparent already -- fine check is the same
                 action.check_bridge(model_result, sut_result)
             }
         }
@@ -214,9 +214,9 @@ mod tests {
     /// Differential bridge testing: detects that the Opaque bridge on
     /// Create handles is hiding the fact that handle IDs differ.
     ///
-    /// This is EXPECTED — the IDs intentionally differ (model starts
+    /// This is EXPECTED -- the IDs intentionally differ (model starts
     /// at 1000, SUT starts at 0). The bridge weakness tells the user:
-    /// "your Opaque bridge is hiding a difference — is this intentional?"
+    /// "your Opaque bridge is hiding a difference -- is this intentional?"
     #[test]
     #[should_panic(expected = "Bridge weakness detected")]
     fn differential_catches_hidden_difference() {

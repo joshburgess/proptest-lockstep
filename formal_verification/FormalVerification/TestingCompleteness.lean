@@ -34,7 +34,7 @@ import FormalVerification.OpaqueDetection
 
   This means: any bug that is observable through the bridge algebra
   will be caught by lockstep testing at sufficient depth. There are
-  no false negatives — only insufficient depth.
+  no false negatives -- only insufficient depth.
 -/
 theorem testing_completeness (sys : LockstepSystem)
     (sm : sys.SM) (ss : sys.SS)

@@ -28,7 +28,7 @@ pub enum ConsistencyLevel {
     /// Every operation matches the model exactly at every step.
     Linearizable,
     /// Per-step mismatches exist, but the system is usable.
-    /// (Placeholder — full session checking requires SessionConsistencyModel.)
+    /// (Placeholder -- full session checking requires SessionConsistencyModel.)
     WeakerThanLinearizable,
 }
 

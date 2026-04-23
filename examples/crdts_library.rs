@@ -23,7 +23,7 @@ use proptest_lockstep::invariant::InvariantModel;
 use proptest_lockstep::eventual::{EventualConsistencyModel, EventualConsistencyConfig};
 
 // ============================================================================
-// PNCounter — supports increment AND decrement
+// PNCounter -- supports increment AND decrement
 // ============================================================================
 
 /// SUT: two PNCounter replicas that can be incremented/decremented
@@ -68,7 +68,7 @@ impl PnCounterPair {
 
     fn read_a(&self) -> i64 {
         use crdts::CvRDT;
-        // Local read — may not include B's operations
+        // Local read -- may not include B's operations
         let mut merged = self.replica_a.clone();
         merged.merge(self.replica_a.clone());
         self.replica_a.read().to_i64().unwrap_or(0)
@@ -98,7 +98,7 @@ impl PnCounterPair {
 }
 
 // ============================================================================
-// Model — sequential counter tracking total
+// Model -- sequential counter tracking total
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -128,11 +128,11 @@ pub mod pn {
     #[action(real_return = "()")]
     pub struct DecB;
 
-    // Read from replica A — may be stale
+    // Read from replica A -- may be stale
     #[action(real_return = "i64")]
     pub struct ReadA;
 
-    // Global read (merged) — always up to date
+    // Global read (merged) -- always up to date
     #[action(real_return = "i64")]
     pub struct ReadMerged;
 }

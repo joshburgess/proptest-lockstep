@@ -19,7 +19,7 @@
 //! - Actions tagged with which subsystem they belong to
 //!
 //! The framework verifies that the shared state is accessed
-//! consistently — both subsystems' models agree on the shared
+//! consistently -- both subsystems' models agree on the shared
 //! state after any interleaving of actions.
 
 use std::any::Any;
@@ -72,13 +72,13 @@ impl std::fmt::Display for TensorResult {
 ///
 /// # Arguments
 ///
-/// * `left_actions` — actions for the left subsystem
-/// * `right_actions` — actions for the right subsystem
-/// * `init_model` — initial shared model state
-/// * `init_sut` — initial shared SUT state
-/// * `step_model` — execute an action on the model
-/// * `step_sut` — execute an action on the SUT
-/// * `check` — compare model and SUT after each step
+/// * `left_actions` -- actions for the left subsystem
+/// * `right_actions` -- actions for the right subsystem
+/// * `init_model` -- initial shared model state
+/// * `init_sut` -- initial shared SUT state
+/// * `step_model` -- execute an action on the model
+/// * `step_sut` -- execute an action on the SUT
+/// * `check` -- compare model and SUT after each step
 pub fn run_tensor_test<S: Debug + Clone + PartialEq>(
     left_actions: &[Box<dyn AnyAction>],
     right_actions: &[Box<dyn AnyAction>],

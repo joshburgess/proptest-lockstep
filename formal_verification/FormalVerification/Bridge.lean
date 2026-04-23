@@ -213,7 +213,7 @@ instance bridge_equiv_decidable (b : Bridge R M) (r : R) (m : M) :
   exact b.dec_eq _ _
 
 /--
-  Bridge equivalence is either true or false — it can be computed.
+  Bridge equivalence is either true or false -- it can be computed.
   This justifies the Rust `check_bridge` returning `Result<(), String>`:
   the check is a total function, not a partial one.
 -/

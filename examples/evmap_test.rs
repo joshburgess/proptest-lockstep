@@ -1,13 +1,13 @@
 #![allow(dead_code)]
-//! evmap eventual consistency test — testing a real EC crate.
+//! evmap eventual consistency test -- testing a real EC crate.
 //!
-//! Tests `evmap` — a lock-free, eventually consistent concurrent map.
+//! Tests `evmap` -- a lock-free, eventually consistent concurrent map.
 //! Writers update one copy while readers see the other. Writes become
 //! visible only after `refresh()`.
 //!
 //! This is the perfect demonstration of the eventual consistency
 //! framework:
-//! - Standard lockstep FAILS (reads return stale data — by design!)
+//! - Standard lockstep FAILS (reads return stale data -- by design!)
 //! - Eventual consistency PASSES (after sync/refresh, state converges)
 //!
 //! This proves the framework correctly handles a real eventually-
@@ -26,7 +26,7 @@ use proptest_lockstep::invariant::InvariantModel;
 use proptest_lockstep::eventual::{EventualConsistencyModel, EventualConsistencyConfig};
 
 // ============================================================================
-// evmap wrapper — combines read + write handles
+// evmap wrapper -- combines read + write handles
 // ============================================================================
 
 /// Wraps evmap's separate read/write handles into a single struct
@@ -47,11 +47,11 @@ impl EvmapStore {
         // to simulate single-value semantics
         self.writer.empty(key.to_string());
         self.writer.insert(key.to_string(), value.to_string());
-        // NOTE: not calling refresh() — write is pending!
+        // NOTE: not calling refresh() -- write is pending!
     }
 
     fn get(&self, key: &str) -> Option<String> {
-        // Reads from the reader handle — may return stale data
+        // Reads from the reader handle -- may return stale data
         self.reader
             .get_one(key)
             .map(|guard| guard.clone())
@@ -85,7 +85,7 @@ impl std::fmt::Debug for EvmapStore {
 }
 
 // ============================================================================
-// Model — sequential HashMap (always up-to-date)
+// Model -- sequential HashMap (always up-to-date)
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -111,7 +111,7 @@ pub mod em {
         pub value: String,
     }
 
-    // Reads may return stale data from evmap — that's expected!
+    // Reads may return stale data from evmap -- that's expected!
     #[action(real_return = "Option<String>")]
     pub struct Get {
         pub key: String,
@@ -235,7 +235,7 @@ mod tests {
     }
 
     /// Standard lockstep FAILS because evmap returns stale reads.
-    /// This proves that evmap is NOT linearizable (by design) —
+    /// This proves that evmap is NOT linearizable (by design) --
     /// and our framework correctly detects this.
     #[test]
     #[should_panic(expected = "Lockstep mismatch")]

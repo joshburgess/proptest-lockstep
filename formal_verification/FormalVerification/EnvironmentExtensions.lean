@@ -177,7 +177,7 @@ where
 
 /--
   A system supporting both crash-recovery and session consistency.
-  After a crash, session histories reset to empty — the session
+  After a crash, session histories reset to empty -- the session
   sees a "fresh start" on recovery.
 -/
 structure CrashSessionSystem extends CrashRecoverySystem where

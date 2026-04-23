@@ -27,7 +27,7 @@ use proptest_lockstep::invariant::InvariantModel;
 use proptest_lockstep::crash_recovery::{CrashRecoveryModel, CrashRecoveryConfig};
 
 // ============================================================================
-// Write-ahead log — SUT
+// Write-ahead log -- SUT
 // ============================================================================
 
 /// A write-ahead log with simulated persistence.
@@ -40,7 +40,7 @@ use proptest_lockstep::crash_recovery::{CrashRecoveryModel, CrashRecoveryConfig}
 /// lazily, creating a window for data loss.
 #[derive(Debug)]
 struct WriteAheadLog {
-    /// Entries that have been "fsynced" — survive crash.
+    /// Entries that have been "fsynced" -- survive crash.
     committed: Vec<String>,
     /// Total reads served (including from committed entries).
     read_count: usize,
@@ -79,7 +79,7 @@ impl WriteAheadLog {
 }
 
 // ============================================================================
-// Model — sequential log
+// Model -- sequential log
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -220,7 +220,7 @@ impl LockstepModel for WalLockstep {
 }
 
 // ============================================================================
-// InvariantModel — shared state invariant
+// InvariantModel -- shared state invariant
 // ============================================================================
 
 impl InvariantModel for WalLockstep {
@@ -232,7 +232,7 @@ impl InvariantModel for WalLockstep {
 }
 
 // ============================================================================
-// CrashRecoveryModel — crash/recovery semantics
+// CrashRecoveryModel -- crash/recovery semantics
 // ============================================================================
 
 impl CrashRecoveryModel for WalLockstep {

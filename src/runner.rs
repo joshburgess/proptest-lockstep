@@ -77,13 +77,13 @@ impl<M: LockstepModel> ReferenceStateMachine for LockstepRef<M> {
 /// The concrete (SUT) side of the lockstep test.
 ///
 /// Maintains its own copy of the model state and environment so that
-/// the lockstep comparison is self-contained — no shared mutable state
+/// the lockstep comparison is self-contained -- no shared mutable state
 /// with the reference side.
 ///
 /// This means the model executes twice per step: once in
 /// `ReferenceStateMachine::apply` (for state advancement and shrinking)
 /// and once here (for lockstep comparison). Models should be cheap,
-/// pure data structures — this is by design.
+/// pure data structures -- this is by design.
 #[derive(Debug)]
 pub struct LockstepSut<M: LockstepModel> {
     pub sut: M::Sut,
@@ -219,7 +219,7 @@ pub fn run_lockstep_test_verbose<M: LockstepModel>(
             );
 
             if let Err(msg) = transition.check_bridge(&*model_result, &*sut_result) {
-                // Mismatch found — minimize and report
+                // Mismatch found -- minimize and report
                 eprintln!("\n=== Lockstep mismatch detected ===");
                 eprintln!("Action: {:?}", transition);
                 eprintln!("{}", msg);

@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-//! DashMap lockstep test — testing a popular concurrent HashMap.
+//! DashMap lockstep test -- testing a popular concurrent HashMap.
 //!
 //! Tests `dashmap::DashMap` (~30M downloads) against a sequential
 //! `std::collections::HashMap` model. DashMap uses sharded locking
@@ -7,10 +7,10 @@
 //! incorrect iteration under concurrent modification).
 //!
 //! This test exercises:
-//! - `insert` / `get` / `remove` — core CRUD operations
-//! - `contains_key` / `len` — query operations
-//! - `entry` API via `or_insert` — conditional insert
-//! - `alter` — in-place mutation
+//! - `insert` / `get` / `remove` -- core CRUD operations
+//! - `contains_key` / `len` -- query operations
+//! - `entry` API via `or_insert` -- conditional insert
+//! - `alter` -- in-place mutation
 //!
 //! Run with:
 //!   `cargo test --example dashmap_test`                         (sequential)
@@ -25,7 +25,7 @@ use proptest::strategy::BoxedStrategy;
 use proptest_lockstep::prelude::*;
 
 // ============================================================================
-// Model — sequential HashMap
+// Model -- sequential HashMap
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -74,14 +74,14 @@ pub mod dm {
     #[action(real_return = "usize")]
     pub struct Len;
 
-    // entry().or_insert(val) — inserts if absent, returns the current value
+    // entry().or_insert(val) -- inserts if absent, returns the current value
     #[action(real_return = "i32")]
     pub struct GetOrInsert {
         pub key: String,
         pub default: i32,
     }
 
-    // alter — mutate in place. We use a simple increment.
+    // alter -- mutate in place. We use a simple increment.
     // Returns whether the key existed.
     #[action(real_return = "bool")]
     pub struct IncrementIfExists {

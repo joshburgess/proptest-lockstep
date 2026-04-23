@@ -15,7 +15,7 @@ use crate::env::TypedEnv;
 /// - Model and SUT interpreters.
 ///
 /// Bridge checking and variable storage are handled automatically by the
-/// generated `AnyAction` impl — users don't need to implement those.
+/// generated `AnyAction` impl -- users don't need to implement those.
 ///
 /// For the model and SUT interpreters, use the generated `dispatch_model`
 /// and `dispatch_sut` helpers with the typed interpreter traits, or

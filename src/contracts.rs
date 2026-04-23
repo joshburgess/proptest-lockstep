@@ -10,7 +10,7 @@
 //! This bridges testing and production monitoring: the same bridge
 //! algebra that powers lockstep testing also powers runtime
 //! verification. The `observational_refinement_equiv` theorem
-//! guarantees the contract is *exactly right* — it catches all
+//! guarantees the contract is *exactly right* -- it catches all
 //! bugs detectable by the bridge and nothing more.
 //!
 //! # Use Cases
@@ -79,7 +79,7 @@ impl std::fmt::Display for ContractViolation {
 /// have diverged.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DivergenceStrategy {
-    /// Continue monitoring — the model and SUT may be out of sync,
+    /// Continue monitoring -- the model and SUT may be out of sync,
     /// but subsequent violations are still reported. Use when you
     /// want to collect ALL mismatches, even after divergence.
     Continue,

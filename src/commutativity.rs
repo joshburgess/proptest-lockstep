@@ -21,7 +21,7 @@
 //!
 //! Users implement [`CommutativitySpecModel`] on top of
 //! [`InvariantModel`](crate::invariant::InvariantModel):
-//! - `should_commute(a, b, state)` — declares the commutativity spec
+//! - `should_commute(a, b, state)` -- declares the commutativity spec
 //! - The runner generates pairs of actions, checks whether they
 //!   actually commute in the model, and reports violations
 
@@ -51,7 +51,7 @@ where
     /// state. Returns `true` if the actions are expected to commute
     /// (produce the same results and final state regardless of order).
     ///
-    /// This is the *specification* — the framework tests whether the
+    /// This is the *specification* -- the framework tests whether the
     /// model actually satisfies it.
     fn should_commute(
         state: &Self::ModelState,
@@ -167,7 +167,7 @@ where
 /// prefix, then generates pairs of actions and checks:
 /// 1. If `should_commute` says they should commute, verify they do
 /// 2. If `should_commute` says they shouldn't, verify they don't
-///    (optional — a false negative in the spec is less serious)
+///    (optional -- a false negative in the spec is less serious)
 ///
 /// # Panics
 ///
@@ -228,7 +228,7 @@ where
             );
 
             if spec_says_commute {
-                // Spec says they should commute — verify
+                // Spec says they should commute -- verify
                 let result = check_commute::<M>(
                     &pre_state,
                     &pre_env,

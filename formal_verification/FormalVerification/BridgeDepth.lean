@@ -53,7 +53,7 @@ theorem deeper_is_stronger (sys : LockstepSystem)
 
 /--
   **General tight bound**: failure at successor depth k implies
-  failure at original depth k+1. This is the exact relationship —
+  failure at original depth k+1. This is the exact relationship --
   the detection depth is 1 + the successor failure depth.
 -/
 theorem detection_depth_exact (sys : LockstepSystem)

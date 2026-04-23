@@ -10,14 +10,14 @@ use std::mem::ManuallyDrop;
 /// The `unsafe` transmute inside `cast` / `cast_ref` is *sound by
 /// construction*: the witness can only exist when `A == B`.
 ///
-/// Users of `proptest-lockstep` never interact with this type directly —
+/// Users of `proptest-lockstep` never interact with this type directly --
 /// it is generated and used internally by the proc macro.
 ///
 /// We use `PhantomData<fn(A) -> B>` to be contravariant in `A` and covariant
 /// in `B`, preventing unsound variance exploits.
 pub struct Is<A, B>(PhantomData<fn(A) -> B>);
 
-// Manual impls — the witness carries no data.
+// Manual impls -- the witness carries no data.
 impl<A, B> Clone for Is<A, B> {
     fn clone(&self) -> Self {
         Is(PhantomData)
@@ -80,7 +80,7 @@ impl<A, B> Is<A, B> {
     /// can prove the relationship holds.
     ///
     /// Restricted to `pub(crate)` because the caller must guarantee that
-    /// `FA` and `FB` are genuinely `F<A>` and `F<B>` for some `F` —
+    /// `FA` and `FB` are genuinely `F<A>` and `F<B>` for some `F` --
     /// Rust's type system cannot enforce this.
     pub(crate) fn lift<FA, FB>(self) -> Is<FA, FB> {
         Is(PhantomData)

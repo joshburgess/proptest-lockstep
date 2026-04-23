@@ -8,7 +8,7 @@
 
   The key theorem: `bounded_bisim` at depth n fails iff the Attacker
   has a winning strategy of depth ≤ n. The winning strategy is a
-  concrete `BisimWitness` — a path through the game tree that
+  concrete `BisimWitness` -- a path through the game tree that
   leads to a bridge failure.
 
   This connects to testing: the witness IS the minimal failing
@@ -27,9 +27,9 @@ import FormalVerification.Lockstep
   the bisimulation game. Each constructor represents a move:
 
   - `bridge_fail a`: action `a` at the current state has a bridge
-    failure — the Attacker wins immediately.
+    failure -- the Attacker wins immediately.
   - `deeper a w`: action `a` passes its bridge check, but witness
-    `w` shows the successor states are distinguishable — the
+    `w` shows the successor states are distinguishable -- the
     Attacker wins by continuing.
 
   The witness is a path through the game tree, not the full tree.
@@ -74,7 +74,7 @@ def BisimWitness.depth : BisimWitness sys → Nat
   **Witness soundness**: a valid witness of depth ≤ n proves
   that bounded_bisim fails at depth n.
 
-  This is the constructive direction — the witness directly
+  This is the constructive direction -- the witness directly
   encodes the Attacker's winning strategy. No classical logic
   needed.
 -/
@@ -111,7 +111,7 @@ theorem witness_implies_not_bisim (sys : LockstepSystem)
   **Witness completeness**: if bounded_bisim fails at depth n,
   there exists a valid witness of depth ≤ n.
 
-  This is the classical direction — extracting a concrete strategy
+  This is the classical direction -- extracting a concrete strategy
   from the negation of a universal quantifier requires excluded
   middle. The witness is the Attacker's optimal play.
 

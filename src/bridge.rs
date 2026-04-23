@@ -12,7 +12,7 @@ pub trait LockstepBridge {
     type Real;
     /// The type returned by the pure model.
     type Model;
-    /// The common observable form — must support `Debug + PartialEq`.
+    /// The common observable form -- must support `Debug + PartialEq`.
     type Observed: Debug + PartialEq;
 
     /// Project a real value into its observable form.
@@ -63,7 +63,7 @@ pub trait LockstepBridge {
 
 /// Fully observable: model and real are the same type, compared directly.
 ///
-/// Use for types like `String`, `i32`, `bool`, error enums — anything
+/// Use for types like `String`, `i32`, `bool`, error enums -- anything
 /// where the model produces the exact same type as the real system.
 pub struct Transparent<T>(PhantomData<T>);
 
@@ -86,7 +86,7 @@ where
 
 /// Opaque: real and model types differ, and direct comparison is meaningless.
 ///
-/// Use for handles, cursors, session IDs — anything where the model uses
+/// Use for handles, cursors, session IDs -- anything where the model uses
 /// a surrogate type. The observed form is `()`, so the bridge always
 /// succeeds. A wrong handle only manifests later when *using* it produces
 /// the wrong result.
@@ -274,7 +274,7 @@ mod tests {
 
     #[test]
     fn opaque_always_matches() {
-        // Different types, different values — still matches.
+        // Different types, different values -- still matches.
         assert!(Opaque::<u64, String>::check(&42u64, &"hello".to_string()).is_ok());
     }
 
@@ -311,7 +311,7 @@ mod tests {
         >;
         let real: Result<(u64, String), bool> = Ok((999, "foo".into()));
         let model: Result<(i32, String), bool> = Ok((1, "foo".into()));
-        // Handles differ but are opaque — should match
+        // Handles differ but are opaque -- should match
         assert!(B::check(&real, &model).is_ok());
     }
 

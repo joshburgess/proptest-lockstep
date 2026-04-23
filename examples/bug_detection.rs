@@ -3,7 +3,7 @@
 //!
 //! This example contains **intentionally buggy** implementations of
 //! concurrent data structures and demonstrates that the lockstep
-//! framework catches each bug. Each test is expected to FAIL —
+//! framework catches each bug. Each test is expected to FAIL --
 //! the `#[should_panic]` attribute confirms the framework detects
 //! the bug.
 //!
@@ -137,7 +137,7 @@ impl BuggyQueue {
             if self.cached_len % 3 != 1 {
                 self.cached_len -= 1;
             }
-            // else: "forgot" to decrement — cached_len is now stale
+            // else: "forgot" to decrement -- cached_len is now stale
         }
         result
     }
@@ -352,12 +352,12 @@ impl LockstepModel for BuggyLruLockstep {
 }
 
 // ============================================================================
-// Tests — each should FAIL, proving the framework catches the bug
+// Tests -- each should FAIL, proving the framework catches the bug
 // ============================================================================
 
 fn main() {
     println!("Run with `cargo test --example bug_detection`");
-    println!("All tests use #[should_panic] — they demonstrate bug DETECTION.");
+    println!("All tests use #[should_panic] -- they demonstrate bug DETECTION.");
 }
 
 #[cfg(test)]

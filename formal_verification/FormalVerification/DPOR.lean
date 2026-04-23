@@ -59,7 +59,7 @@ theorem linearization_check_nil (sys : LockstepSystem) (sm : sys.SM) :
   2. Equality of final model states (`PartialEq`)
 
   This formalization uses direct equality on results (stronger than
-  bridge equivalence, but sound — equality implies bridge equivalence
+  bridge equivalence, but sound -- equality implies bridge equivalence
   for any bridge).
 -/
 def model_commute (sys : LockstepSystem) (a b : sys.ActionIdx)
@@ -254,7 +254,7 @@ theorem swap_reachable_symm (sys : LockstepSystem) (sm : sys.SM)
 
 /--
   **Sleep set biconditional**: swap-reachable permutations are
-  equivalent for linearization_check — one passes iff the other does.
+  equivalent for linearization_check -- one passes iff the other does.
   This justifies exploring only one representative per
   swap-equivalence class (the sleep set optimization).
 -/

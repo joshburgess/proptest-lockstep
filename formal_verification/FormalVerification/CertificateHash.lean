@@ -4,7 +4,7 @@
   Implements FNV-1a hashing in Lean and proves that the hash values
   for each bridge type match the constants embedded in the Rust
   `BridgeCertificate`. This closes the gap between the Rust-computed
-  hashes and the Lean proofs — the hashes are now verified on both sides.
+  hashes and the Lean proofs -- the hashes are now verified on both sides.
 
   The cross-verification protocol:
   1. Lean computes `fnv1a "Transparent"` and proves it equals `0xd0e945b97c0c46d1`
@@ -44,7 +44,7 @@ def fnv1a_string (s : String) : UInt64 :=
 -- Verified hash constants
 -- =========================================================================
 
-/-- Hash for "Transparent" — must match Rust's `fnv1a_hash(b"Transparent")`. -/
+/-- Hash for "Transparent" -- must match Rust's `fnv1a_hash(b"Transparent")`. -/
 def hash_transparent : UInt64 := fnv1a_string "Transparent"
 
 /-- Hash for "Opaque". -/

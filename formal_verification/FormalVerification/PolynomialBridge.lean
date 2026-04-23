@@ -26,12 +26,12 @@ import FormalVerification.BridgeRefinement
 /--
   The shape of a bridge, describing its polynomial structure.
   Each constructor corresponds to a bridge combinator:
-  - `atom` — transparent (identity observation)
-  - `unit` — opaque (constant Unit observation)
-  - `sum` — coproduct (Result/Either)
-  - `prod` — product (Tuple)
-  - `option` — lifted (Option)
-  - `list` — free monoid (Vec)
+  - `atom` -- transparent (identity observation)
+  - `unit` -- opaque (constant Unit observation)
+  - `sum` -- coproduct (Result/Either)
+  - `prod` -- product (Tuple)
+  - `option` -- lifted (Option)
+  - `list` -- free monoid (Vec)
 -/
 inductive BridgeShape where
   | atom : BridgeShape
@@ -231,7 +231,7 @@ theorem opaque_is_unit (R M : Type) :
 -- =========================================================================
 
 /--
-  The depth of a bridge shape — the maximum nesting level.
+  The depth of a bridge shape -- the maximum nesting level.
   Corresponds to the recursion depth of the bridge derivation proc macro.
 -/
 def BridgeShape.depth : BridgeShape → Nat
@@ -355,7 +355,7 @@ theorem shape_refines_bridge_refines
 /--
   **Coarsening preserves fmap**: the coarsening map commutes with
   the polynomial functor's action on morphisms. This is the
-  naturality condition — coarsening is a natural transformation.
+  naturality condition -- coarsening is a natural transformation.
 
   `coarsen ∘ fmap_s₁ f = fmap_s₂ f ∘ coarsen`
 -/

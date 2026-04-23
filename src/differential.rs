@@ -1,7 +1,7 @@
 //! Differential bridge testing.
 //!
-//! Given two bridges for the same action — a coarser one (user's) and
-//! a finer one (auto-generated) — this module detects when the coarser
+//! Given two bridges for the same action -- a coarser one (user's) and
+//! a finer one (auto-generated) -- this module detects when the coarser
 //! bridge hides real bugs that the finer bridge would catch.
 //!
 //! The theoretical foundation is `refines_strengthen_bisim`: a finer
@@ -19,9 +19,9 @@
 //! # How It Works
 //!
 //! 1. Run actions against model and SUT
-//! 2. Check the user's bridge (coarse) — record pass/fail
+//! 2. Check the user's bridge (coarse) -- record pass/fail
 //! 3. Check the finest possible bridge (all Transparent where types
-//!    match) — record pass/fail
+//!    match) -- record pass/fail
 //! 4. If fine fails but coarse passes: report a **bridge weakness**
 //!
 //! This is a meta-testing technique: testing the test oracles themselves.
@@ -48,7 +48,7 @@ use crate::runner::LockstepRef;
 pub trait DifferentialBridgeModel: LockstepModel {
     /// Perform a fine-grained bridge check on the action's results.
     ///
-    /// This should be stricter than the default bridge — for example,
+    /// This should be stricter than the default bridge -- for example,
     /// using `Transparent` where the default uses `Opaque`. Returns
     /// `Ok(())` if the fine check passes, or an error message.
     ///
@@ -191,11 +191,11 @@ pub fn run_differential_test<M: DifferentialBridgeModel>(
 
             match (&coarse, &fine) {
                 (Ok(()), Ok(())) => {
-                    // Both pass — no issue
+                    // Both pass -- no issue
                     total_stats.lock().unwrap().agreements += 1;
                 }
                 (Err(msg), _) => {
-                    // Coarse fails — this is a real lockstep mismatch
+                    // Coarse fails -- this is a real lockstep mismatch
                     total_stats.lock().unwrap().agreements += 1;
                     panic!(
                         "Lockstep mismatch!\n  Action: {:?}\n{}",

@@ -4,8 +4,8 @@ use std::marker::PhantomData;
 
 /// Phase distinction via GATs.
 ///
-/// During generation, everything is `Symbolic` — variables are opaque tokens.
-/// During execution, everything is `Concrete` — variables hold real values.
+/// During generation, everything is `Symbolic` -- variables are opaque tokens.
+/// During execution, everything is `Concrete` -- variables hold real values.
 /// The compiler enforces the boundary: no real values leak into generation,
 /// no symbolic tokens survive into execution.
 pub trait Phase: Clone + Debug + 'static {

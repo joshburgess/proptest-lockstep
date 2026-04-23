@@ -6,7 +6,7 @@
   also satisfies bounded bisimulation.
 
   This enables modular testing: verify each subsystem independently,
-  then conclude that their composition is correct — without testing
+  then conclude that their composition is correct -- without testing
   the composed system directly.
 
   Independence means: actions from subsystem A don't affect the
@@ -27,7 +27,7 @@ import FormalVerification.BridgeRefinement
 /--
   The product of two lockstep systems. Actions are from the disjoint
   union of both action spaces. Each action only affects its own
-  subsystem's state — the other subsystem's state is unchanged.
+  subsystem's state -- the other subsystem's state is unchanged.
 -/
 def product_system (sys1 sys2 : LockstepSystem) : LockstepSystem where
   SM := sys1.SM × sys2.SM

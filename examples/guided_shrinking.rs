@@ -116,7 +116,7 @@ mod tests {
     #[test]
     fn finds_failure_depth() {
         // Construct a trace that triggers the bug:
-        // Push(1), Push(2), Pop — bug manifests at Pop (step 2)
+        // Push(1), Push(2), Pop -- bug manifests at Pop (step 2)
         let trace: Vec<Box<dyn AnyAction>> = vec![
             stack_actions::push(stack_actions::Push { value: 1 }),
             stack_actions::push(stack_actions::Push { value: 2 }),
@@ -172,7 +172,7 @@ mod tests {
             stack_actions::push(stack_actions::Push { value: 9 }),
             stack_actions::len(stack_actions::Len),
             stack_actions::pop(stack_actions::Pop),  // bug at this Pop
-            stack_actions::push(stack_actions::Push { value: 1 }),  // after failure — irrelevant
+            stack_actions::push(stack_actions::Push { value: 1 }),  // after failure -- irrelevant
         ];
 
         let result = minimize_and_report::<BuggyStackLockstep>(&trace);

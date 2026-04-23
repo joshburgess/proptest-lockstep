@@ -2,7 +2,7 @@
 //!
 //! Provides the Rust-side interface for certified bridge synthesis.
 //! The Lean formalization (`CertifiedSynthesis.lean`) defines
-//! `CertifiedBridge` — a bridge paired with a constructive proof
+//! `CertifiedBridge` -- a bridge paired with a constructive proof
 //! that it was synthesized from a correct recipe.
 //!
 //! # Machine-Verifiable Certificates

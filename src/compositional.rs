@@ -41,7 +41,7 @@ use crate::model::LockstepModel;
 /// both sub-states.
 ///
 /// Independence assumption: left actions don't affect right state
-/// and vice versa. This is enforced by the type structure — each
+/// and vice versa. This is enforced by the type structure -- each
 /// interpreter only has access to its own sub-state.
 #[derive(Debug, Clone)]
 pub struct ComposedModel<L: LockstepModel, R: LockstepModel> {
@@ -92,8 +92,8 @@ impl std::fmt::Display for SubsystemAction {
 ///
 /// # Arguments
 ///
-/// * `left_trace` — actions for the left subsystem
-/// * `right_trace` — actions for the right subsystem
+/// * `left_trace` -- actions for the left subsystem
+/// * `right_trace` -- actions for the right subsystem
 ///
 /// # Panics
 ///
@@ -169,7 +169,7 @@ pub fn run_composed_test<L: LockstepModel, R: LockstepModel>(
 
 /// Verify that two independently-tested subsystems can be composed.
 ///
-/// This is a documentation function — the actual composition guarantee
+/// This is a documentation function -- the actual composition guarantee
 /// comes from the `compositional_bisim` theorem in Lean, which proves
 /// that independent bisimulations compose. This function just runs
 /// both subsystem tests and confirms they pass.
@@ -237,11 +237,11 @@ impl std::fmt::Display for CompositionResult {
 /// `refines_strengthen_bisim`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum BridgePrecision {
-    /// All bridges opaque — fastest, weakest guarantee.
+    /// All bridges opaque -- fastest, weakest guarantee.
     Opaque,
     /// Mix of opaque and transparent bridges.
     Mixed,
-    /// All bridges transparent — slowest, strongest guarantee.
+    /// All bridges transparent -- slowest, strongest guarantee.
     Transparent,
 }
 
@@ -308,7 +308,7 @@ impl IncrementalComposition {
 
     /// Re-test the left subsystem after a change (e.g., bridge refinement).
     ///
-    /// The right subsystem's previous result is reused — this is the
+    /// The right subsystem's previous result is reused -- this is the
     /// incremental guarantee from `product_refines_bisim`: refining
     /// one component's bridges doesn't invalidate the other component's
     /// test results.

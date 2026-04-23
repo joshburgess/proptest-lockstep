@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-//! File system lockstep test — the canonical lockstep example.
+//! File system lockstep test -- the canonical lockstep example.
 //!
 //! Demonstrates the full power of the library:
 //! - **Opaque handles**: `FileHandle` (real) vs `MockHandle` (model)

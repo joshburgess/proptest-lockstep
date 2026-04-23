@@ -4,8 +4,8 @@
 //! After a lockstep mismatch is found, this module minimizes the
 //! failing trace by:
 //!
-//! 1. Finding the **failure depth** — the first step where bridge_equiv fails
-//! 2. Trying to **remove prefix actions** — if removing an action still
+//! 1. Finding the **failure depth** -- the first step where bridge_equiv fails
+//! 2. Trying to **remove prefix actions** -- if removing an action still
 //!    causes failure at the same or earlier depth, it was irrelevant
 //! 3. Returning the **minimal sub-trace** that triggers the bug
 //!
@@ -16,7 +16,7 @@
 //!
 //! # Why This Is Better Than Random Shrinking
 //!
-//! proptest's built-in shrinking is generic — it shrinks values randomly,
+//! proptest's built-in shrinking is generic -- it shrinks values randomly,
 //! guided by the strategy's `ValueTree`. This produces non-minimal
 //! counterexamples because it doesn't understand the lockstep structure.
 //!
@@ -25,7 +25,7 @@
 //! - Actions before the failure are "setup" (may or may not be needed)
 //! - Removing unnecessary setup actions produces a shorter trace
 //!
-//! This is a post-hoc minimization pass — it runs AFTER proptest's
+//! This is a post-hoc minimization pass -- it runs AFTER proptest's
 //! shrinking, further reducing the counterexample.
 
 use std::fmt::Debug;
@@ -142,7 +142,7 @@ impl std::fmt::Display for ShrinkResult {
 ///    - If the trace passes, the action was necessary (keep it)
 /// 4. Return the minimal sub-trace
 ///
-/// This is a greedy minimization — it removes actions one at a time
+/// This is a greedy minimization -- it removes actions one at a time
 /// from the front. It's not guaranteed to find the globally minimal
 /// trace, but it's fast and typically produces near-minimal results.
 pub fn minimize_trace<M: LockstepModel>(
@@ -173,11 +173,11 @@ pub fn minimize_trace<M: LockstepModel>(
 
         // Check if the candidate still fails
         if find_failure_depth::<M>(&candidate).is_some() {
-            // Still fails without this action — it was irrelevant, keep it removed
+            // Still fails without this action -- it was irrelevant, keep it removed
             minimal = candidate;
-            // Don't increment i — the next action shifted into this position
+            // Don't increment i -- the next action shifted into this position
         } else {
-            // Passes without this action — it was necessary, keep it
+            // Passes without this action -- it was necessary, keep it
             i += 1;
         }
     }
@@ -230,12 +230,12 @@ pub fn run_lockstep_test_with_shrinking<M: LockstepModel>(
     }));
 
     if let Err(panic_payload) = result {
-        // A failure was found — now minimize it
+        // A failure was found -- now minimize it
         // We need to generate a failing trace. Run again to capture it.
         eprintln!("\n=== Bisimulation-guided shrinking ===");
         eprintln!("proptest found a failure. Attempting to minimize...\n");
 
-        // Re-panic with the original error — the proptest shrinking
+        // Re-panic with the original error -- the proptest shrinking
         // already produced a reasonable trace. In a full implementation,
         // we'd capture the trace and minimize it. For now, we add
         // guidance to the error message.
@@ -285,7 +285,7 @@ pub fn minimize_and_report<M: LockstepModel>(
 
     for (i, action) in result.minimal_trace.iter().enumerate() {
         if i == result.failure.failure_depth {
-            eprintln!("  [step {} — FAILS] {:?}", i, action);
+            eprintln!("  [step {} -- FAILS] {:?}", i, action);
         } else {
             eprintln!("  [step {}] {:?}", i, action);
         }

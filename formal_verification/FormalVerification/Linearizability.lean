@@ -71,7 +71,7 @@ theorem swap_preserves_linearizability (sys : LockstepSystem)
   exact ⟨perm, hperm.trans (List.Perm.swap r2 r1 rest), hcheck⟩
 
 /--
-  Linearizability is invariant under the order records are listed —
+  Linearizability is invariant under the order records are listed --
   it only depends on the multiset of operations.
 -/
 theorem linearizability_perm_invariant (sys : LockstepSystem)

@@ -21,10 +21,10 @@
 //!
 //! Users implement [`SessionConsistencyModel`] on top of
 //! [`InvariantModel`](crate::invariant::InvariantModel):
-//! - `SessionId` — identifies which session an action belongs to
-//! - `session_of` — extract the session ID from an action
-//! - `observation` — extract the observable value from a step result
-//! - `write_observation` — extract what a write made visible
+//! - `SessionId` -- identifies which session an action belongs to
+//! - `session_of` -- extract the session ID from an action
+//! - `observation` -- extract the observable value from a step result
+//! - `write_observation` -- extract what a write made visible
 //!
 //! The runner tracks per-session observation histories and checks
 //! that each session's history satisfies the declared guarantees.
@@ -245,7 +245,7 @@ pub fn run_session_consistency_test<M: SessionConsistencyModel>(
                     if guarantees.contains(&SessionGuarantee::MonotonicReads) {
                         if let Some(last_read) = session.last_read.get(&key) {
                             if obs != *last_read {
-                                // A different value was read — this could be
+                                // A different value was read -- this could be
                                 // a monotonicity violation if the new value is
                                 // "older" than the previous. Since we can't
                                 // determine ordering from values alone, we

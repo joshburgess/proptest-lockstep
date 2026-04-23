@@ -26,7 +26,7 @@ use proptest::strategy::BoxedStrategy;
 use proptest_lockstep::prelude::*;
 
 // ============================================================================
-// Atomic counter — SUT
+// Atomic counter -- SUT
 // ============================================================================
 
 /// A counter backed by `AtomicU64`.
@@ -92,7 +92,7 @@ impl std::fmt::Debug for AtomicCounter {
 }
 
 // ============================================================================
-// Model — sequential counter
+// Model -- sequential counter
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -140,7 +140,7 @@ impl CounterModel {
 }
 
 // ============================================================================
-// Actions — with auto-derived bridges
+// Actions -- with auto-derived bridges
 // ============================================================================
 
 #[proptest_lockstep::lockstep_actions(state = CounterModel)]

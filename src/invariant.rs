@@ -1,6 +1,6 @@
 //! State invariant checking for lockstep tests.
 //!
-//! Provides the [`InvariantModel`] trait — a shared extension point
+//! Provides the [`InvariantModel`] trait -- a shared extension point
 //! for lockstep models that maintain per-step state invariants.
 //!
 //! An invariant is a predicate on the model state that must hold at
@@ -8,7 +8,7 @@
 //! fails immediately with a diagnostic message.
 //!
 //! This module is used by:
-//! - [`crash_recovery`](crate::crash_recovery) — invariant checked at
+//! - [`crash_recovery`](crate::crash_recovery) -- invariant checked at
 //!   every step and after crash recovery
 //! - Future extensions (commutativity specs, eventual consistency,
 //!   session consistency) will also build on this trait

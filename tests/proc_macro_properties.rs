@@ -1,7 +1,7 @@
 //! Property tests for the proc macro.
 //!
 //! Verifies that the proc macro generates correct code for various
-//! type structures — transparent, opaque, composed, and auto-derived.
+//! type structures -- transparent, opaque, composed, and auto-derived.
 
 use proptest_lockstep::prelude::*;
 use std::any::Any;
@@ -168,6 +168,6 @@ pub mod uses_actions {
 #[test]
 fn uses_attribute_compiles() {
     let _ = uses_actions::independent(uses_actions::Independent);
-    // Dependent requires a GVar — just check the type exists
+    // Dependent requires a GVar -- just check the type exists
     assert_eq!(std::mem::size_of::<uses_actions::Dependent>(), std::mem::size_of::<GVar<CreateResult, RealId, OpComp<OpOk, OpFst, (RealId, String)>>>());
 }

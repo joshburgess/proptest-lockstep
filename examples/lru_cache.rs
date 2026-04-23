@@ -3,7 +3,7 @@
 //!
 //! Tests an LRU (least-recently-used) cache against a sequential model.
 //! The cache has a fixed capacity and evicts the least-recently-used
-//! entry when full. This is the most complex case study — it involves
+//! entry when full. This is the most complex case study -- it involves
 //! capacity management, ordering invariants, and state-dependent
 //! eviction behavior.
 //!
@@ -29,7 +29,7 @@ use proptest::strategy::BoxedStrategy;
 use proptest_lockstep::prelude::*;
 
 // ============================================================================
-// LRU Cache — SUT
+// LRU Cache -- SUT
 // ============================================================================
 
 /// A simple LRU cache backed by a HashMap + VecDeque for ordering.
@@ -107,7 +107,7 @@ impl std::fmt::Debug for LruCache {
 }
 
 // ============================================================================
-// Model — sequential LRU cache
+// Model -- sequential LRU cache
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -168,7 +168,7 @@ impl LruModel {
 }
 
 // ============================================================================
-// Actions — with auto-derived bridges
+// Actions -- with auto-derived bridges
 // ============================================================================
 
 #[proptest_lockstep::lockstep_actions(state = LruModel)]

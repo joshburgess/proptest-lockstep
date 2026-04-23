@@ -131,7 +131,7 @@ type OpenModel = Result<(MockHandle, String), FsErr>;
 type HandleProj = OpComp<OpOk, OpFst, (FileHandle, String)>;
 
 // ============================================================================
-// Actions — with AUTO-DERIVED BRIDGES
+// Actions -- with AUTO-DERIVED BRIDGES
 // ============================================================================
 
 #[proptest_lockstep::lockstep_actions(state = MockFs)]
@@ -146,7 +146,7 @@ pub mod fs {
     pub struct Open { pub path: String }
 
     // Bridge auto-derived as: ResultBridge<Transparent<()>, Transparent<FsErr>>
-    // (no opaque_types needed — real_return == model_return)
+    // (no opaque_types needed -- real_return == model_return)
     #[action(
         real_return = "Result<(), FsErr>",
         uses = [handle],

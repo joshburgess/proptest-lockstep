@@ -22,7 +22,7 @@ use proptest_lockstep::model::LockstepModel;
 // KV model for benchmarks
 //
 // Uses a HashMap model for commutativity detection (PartialEq on state),
-// but the bridge always passes — this lets us benchmark DPOR pruning
+// but the bridge always passes -- this lets us benchmark DPOR pruning
 // independently of bridge check cost.
 // =========================================================================
 
@@ -31,14 +31,14 @@ struct KvState {
     data: HashMap<String, String>,
 }
 
-/// A write action — mutates model state. Bridge always passes.
+/// A write action -- mutates model state. Bridge always passes.
 #[derive(Debug, Clone)]
 struct Put {
     key: String,
     value: String,
 }
 
-/// A read action — doesn't mutate state. Bridge always passes.
+/// A read action -- doesn't mutate state. Bridge always passes.
 #[derive(Debug, Clone)]
 struct Get {
     key: String,
@@ -121,12 +121,12 @@ fn disjoint_workload(n: usize) -> Vec<Vec<OpRecord>> {
     vec![branch1, branch2]
 }
 
-/// All operations write to the same key — they don't commute, but
+/// All operations write to the same key -- they don't commute, but
 /// linearization succeeds because the bridge always passes (both
 /// orderings produce valid Put results: the previous value).
 /// Uses pre-populated state so results are predictable.
 fn conflicting_workload(n: usize) -> Vec<Vec<OpRecord>> {
-    // Reads on distinct keys that don't exist — all return None,
+    // Reads on distinct keys that don't exist -- all return None,
     // which is what the model also returns regardless of order.
     // Operations touch the same conceptual resource (Get on keys
     // that overlap between branches) but since Get is idempotent,

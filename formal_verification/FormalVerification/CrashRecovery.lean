@@ -9,7 +9,7 @@
   2. A state invariant holds at every reachable state
   3. After a crash, the recovered states are in the bisimulation
 
-  This is the formal foundation for crash-recovery testing —
+  This is the formal foundation for crash-recovery testing --
   the first machine-checked proof that crash-recovery PBT is sound.
   It fills the gap between Jepsen (empirical crash testing) and
   Perennial (full crash-recovery verification).
@@ -34,7 +34,7 @@ structure CrashRecoverySystem extends LockstepSystem where
   checkpoint : SM → DS         -- extract durable state from model
   model_recover : DS → SM      -- recover model from checkpoint
   sut_recover : SS → SS        -- recover SUT from crash (self-recovery from
-                               -- persisted state — the SUT doesn't have
+                               -- persisted state -- the SUT doesn't have
                                -- access to the model's checkpoint, so it
                                -- must reconstruct from its own durable state)
   invariant : SM → Prop        -- state invariant (must hold at every step)
@@ -49,7 +49,7 @@ structure CrashRecoverySystem extends LockstepSystem where
   2. Normal actions preserve bridge_equiv and the bisimulation
   3. After a crash, the recovered states are in the bisimulation
 
-  The crash transition consumes one depth unit — recovering and
+  The crash transition consumes one depth unit -- recovering and
   continuing for n more steps requires depth n+1.
 -/
 def crash_bisim (sys : CrashRecoverySystem) :

@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-//! Treiber stack lockstep test — a real concurrent data structure.
+//! Treiber stack lockstep test -- a real concurrent data structure.
 //!
 //! This is the canonical linearizability case study: a lock-free stack
 //! using `AtomicPtr` + compare-and-swap, tested against a sequential
@@ -27,7 +27,7 @@ use proptest::strategy::BoxedStrategy;
 use proptest_lockstep::prelude::*;
 
 // ============================================================================
-// Treiber Stack — lock-free concurrent stack
+// Treiber Stack -- lock-free concurrent stack
 // ============================================================================
 
 struct Node<T> {
@@ -107,7 +107,7 @@ impl<T> std::fmt::Debug for TreiberStack<T> {
 }
 
 // ============================================================================
-// Model — sequential stack
+// Model -- sequential stack
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -134,7 +134,7 @@ impl StackModel {
 }
 
 // ============================================================================
-// Actions — with auto-derived bridges
+// Actions -- with auto-derived bridges
 // ============================================================================
 
 #[proptest_lockstep::lockstep_actions(state = StackModel)]
@@ -305,7 +305,7 @@ mod concurrent_tests {
             },
             |sut: &TreiberStack<i32>| {
                 // After all operations, emptiness should be consistent
-                // (this is a basic sanity check — the real verification
+                // (this is a basic sanity check -- the real verification
                 // is the linearizability test below)
                 let _ = sut.is_empty();
             },

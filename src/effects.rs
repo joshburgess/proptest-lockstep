@@ -2,7 +2,7 @@
 //!
 //! Replaces the O(n²) dynamic model oracle (`operations_commute`)
 //! with O(1) static effect annotation lookups. Each action declares
-//! its **effect footprint** — which resources it reads/writes — and
+//! its **effect footprint** -- which resources it reads/writes -- and
 //! commutativity is determined from the footprints without running
 //! the model.
 //!
@@ -13,14 +13,14 @@
 //! - Read/Write or Write/Write on the same resource: DON'T commute
 //!
 //! The dynamic model oracle remains as a **fallback** for actions
-//! without effect annotations — graceful degradation, not a breaking
+//! without effect annotations -- graceful degradation, not a breaking
 //! change.
 //!
 //! # Architecture
 //!
 //! Users implement [`EffectModel`] on top of [`LockstepModel`]:
-//! - `Effect` — the effect type (e.g., `KvEffect::Read(key)`)
-//! - `effect_of` — extract the effect from an action
+//! - `Effect` -- the effect type (e.g., `KvEffect::Read(key)`)
+//! - `effect_of` -- extract the effect from an action
 //!
 //! The [`ConflictAlgebra`] trait defines when two effects conflict.
 //! Built-in implementations cover the common read/write pattern.
@@ -117,7 +117,7 @@ pub trait EffectModel: LockstepModel {
 
     /// Extract the effect from an action.
     ///
-    /// Returns `None` if the action has no effect annotation —
+    /// Returns `None` if the action has no effect annotation --
     /// the framework falls back to the dynamic model oracle.
     fn effect_of(action: &dyn AnyAction) -> Option<Self::Effect>;
 }
@@ -129,9 +129,9 @@ pub trait EffectModel: LockstepModel {
 /// Check whether two actions commute based on their effect annotations.
 ///
 /// Returns:
-/// - `Some(true)` — effects don't conflict (commute)
-/// - `Some(false)` — effects conflict (don't commute)
-/// - `None` — one or both actions have no effect annotation (use
+/// - `Some(true)` -- effects don't conflict (commute)
+/// - `Some(false)` -- effects conflict (don't commute)
+/// - `None` -- one or both actions have no effect annotation (use
 ///   dynamic fallback)
 pub fn effects_commute<M: EffectModel>(
     a: &dyn AnyAction,
@@ -173,9 +173,9 @@ impl Default for EffectConfig {
 ///
 /// An inconsistency means:
 /// - Effects say "commute" but the model says "don't commute"
-///   (unsound annotation — could cause DPOR to miss bugs)
+///   (unsound annotation -- could cause DPOR to miss bugs)
 /// - Effects say "don't commute" but the model says "commute"
-///   (conservative annotation — safe but reduces DPOR effectiveness)
+///   (conservative annotation -- safe but reduces DPOR effectiveness)
 #[derive(Debug, Clone)]
 pub struct EffectInconsistency {
     /// Description of action A.

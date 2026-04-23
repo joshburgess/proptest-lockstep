@@ -7,7 +7,7 @@ use crate::env::TypedEnv;
 
 /// Trait object interface for actions with erased return types.
 ///
-/// This is the existential boundary — the only dynamic dispatch point in the
+/// This is the existential boundary -- the only dynamic dispatch point in the
 /// system. All typed logic (model execution, SUT execution, bridge comparison,
 /// variable projection) is fully monomorphized inside each GADT variant.
 /// `Box<dyn AnyAction>` exists only at the sequence container boundary,
@@ -20,7 +20,7 @@ pub trait AnyAction: Debug + DynClone + Send {
     fn as_any(&self) -> &dyn Any;
 
     /// Returns the IDs of symbolic variables that this action references.
-    /// Used for precondition checking during shrinking — if a depended-upon
+    /// Used for precondition checking during shrinking -- if a depended-upon
     /// action is removed, this action must be removed too.
     fn used_vars(&self) -> Vec<usize>;
 

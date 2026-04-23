@@ -1,8 +1,8 @@
 /-
   Opaque Handle Detection
 
-  Proves that opaque bridges — which trivially pass at the point of
-  return — do not prevent detection of incorrect handles. A wrong
+  Proves that opaque bridges -- which trivially pass at the point of
+  return -- do not prevent detection of incorrect handles. A wrong
   opaque handle is caught when it is *used* by a subsequent action
   with a discriminating (e.g., transparent) bridge.
 
@@ -65,8 +65,8 @@ theorem failure_propagates_up (sys : LockstepSystem)
   then bounded bisimulation at depth 2 fails.
 
   This is the canonical "wrong opaque handle" scenario:
-  1. Action `a` creates a handle — opaque bridge passes trivially
-  2. Action `b` uses the handle — transparent bridge catches the error
+  1. Action `a` creates a handle -- opaque bridge passes trivially
+  2. Action `b` uses the handle -- transparent bridge catches the error
 
   The theorem holds for any bridge on `a` (not just opaque), because
   the depth-2 bisimulation requires depth-1 bisimulation at successor
@@ -111,7 +111,7 @@ theorem opaque_delayed_detection (sys : LockstepSystem)
 /--
   **Opaque runner failure is delayed**: if the runner fails on a trace
   starting with an opaque action, the failure must come from a later
-  action in the trace — the opaque step itself always passes.
+  action in the trace -- the opaque step itself always passes.
 -/
 theorem opaque_runner_failure_is_delayed (sys : LockstepSystem)
     (sm : sys.SM) (ss : sys.SS)
@@ -127,7 +127,7 @@ theorem opaque_runner_failure_is_delayed (sys : LockstepSystem)
 
 /--
   **Opaque step always passes in runner**: an opaque action at the
-  head of a trace contributes nothing to the runner check — it passes
+  head of a trace contributes nothing to the runner check -- it passes
   iff the tail passes on the successor states.
 -/
 theorem opaque_runner_transparent (sys : LockstepSystem)

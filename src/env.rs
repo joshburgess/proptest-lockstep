@@ -97,7 +97,7 @@ impl Entry {
 /// A heterogeneous variable environment.
 ///
 /// Stores values of different types keyed by `(id, TypeId)`. This is the
-/// only runtime downcast in the system — it's inside the library boundary,
+/// only runtime downcast in the system -- it's inside the library boundary,
 /// invisible to users.
 pub struct TypedEnv {
     inner: HashMap<(usize, TypeId), Entry>,
@@ -142,7 +142,7 @@ impl TypedEnv {
     /// The `Send` bound is required so that `TypedEnv` is `Send`, which
     /// enables concurrent lockstep testing via Shuttle. Most practical
     /// return types (`Result`, `Option<String>`, numeric types, etc.) are
-    /// `Send`. Types like `Rc<T>` are not — use `Arc<T>` instead.
+    /// `Send`. Types like `Rc<T>` are not -- use `Arc<T>` instead.
     pub fn alloc<T: Clone + Send + 'static>(&mut self, value: T) -> VarKey<T> {
         let id = self.next_id;
         self.next_id += 1;

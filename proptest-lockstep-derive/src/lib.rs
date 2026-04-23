@@ -274,7 +274,7 @@ fn derive_bridge(
                 return quote!(VecBridge<#inner>);
             }
         }
-        // (A, B) / (A', B') — tuples
+        // (A, B) / (A', B') -- tuples
         (syn::Type::Tuple(rt), syn::Type::Tuple(mt))
             if rt.elems.len() == mt.elems.len() =>
         {
@@ -352,7 +352,7 @@ fn path_generic_args(tp: &syn::TypePath) -> Vec<syn::Type> {
 
 #[proc_macro_attribute]
 pub fn lockstep_actions(attr: TokenStream, item: TokenStream) -> TokenStream {
-    // Parsed for API documentation purposes — tells readers which state
+    // Parsed for API documentation purposes -- tells readers which state
     // type these actions target. Not used in codegen (yet).
     let _state_type = parse_module_attr(attr);
     let input = parse_macro_input!(item as ItemMod);
@@ -751,7 +751,7 @@ fn gen_any_action(
     });
 
     quote! {
-        /// Type-erased action wrapper. This is the existential boundary —
+        /// Type-erased action wrapper. This is the existential boundary --
         /// the only dynamic dispatch point in the system.
         #[derive(Clone)]
         pub enum #any_name {
@@ -813,7 +813,7 @@ fn gen_model_interp_trait(name: &Ident, actions: &[ActionDef]) -> TokenStream2 {
     });
 
     quote! {
-        /// Typed model interpreter — one method per action, fully typed.
+        /// Typed model interpreter -- one method per action, fully typed.
         pub trait #name {
             type State;
             #(#methods)*
@@ -832,7 +832,7 @@ fn gen_sut_interp_trait(name: &Ident, actions: &[ActionDef]) -> TokenStream2 {
     });
 
     quote! {
-        /// Typed SUT interpreter — one method per action, fully typed.
+        /// Typed SUT interpreter -- one method per action, fully typed.
         pub trait #name {
             type Sut;
             #(#methods)*

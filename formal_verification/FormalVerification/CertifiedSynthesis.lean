@@ -179,7 +179,7 @@ theorem certified_list_cons
 --   certified_transparent_sound, certified_opaque_sound,
 --   certified_sum_ok, certified_prod_sound,
 --   certified_option_some/none, certified_list_nil/cons.
--- No separate "synthesis_compositional" theorem is needed —
+-- No separate "synthesis_compositional" theorem is needed --
 -- compositionality follows by structural induction on the
 -- construction, applying the appropriate theorem at each node.
 

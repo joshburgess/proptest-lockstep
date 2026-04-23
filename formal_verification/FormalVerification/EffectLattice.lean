@@ -7,7 +7,7 @@
 
   The key result: if the effect algebra is SOUND (effects that don't
   conflict imply model commutativity), then using effects for DPOR
-  is sound — connecting static effect annotations to the existing
+  is sound -- connecting static effect annotations to the existing
   DPOR soundness proof.
 
   Corresponds to `EffectModel` and `ConflictAlgebra` in `src/effects.rs`.
@@ -48,7 +48,7 @@ structure EffectSystem extends LockstepSystem where
 /--
   The effect annotation is SOUND if non-conflicting effects imply
   model commutativity. This ensures that using effects for DPOR
-  is safe — we never skip an interleaving that should be explored.
+  is safe -- we never skip an interleaving that should be explored.
 -/
 def effect_sound (sys : EffectSystem) : Prop :=
   ∀ (a b : sys.ActionIdx) (sm : sys.SM),

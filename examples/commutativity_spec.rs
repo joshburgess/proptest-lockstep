@@ -6,9 +6,9 @@
 //! model satisfies the specification.
 //!
 //! For a KV store:
-//! - Get(k1) commutes with Get(k2) — always (reads are independent)
-//! - Put(k1, v1) commutes with Put(k2, v2) — iff k1 ≠ k2
-//! - Get(k1) commutes with Put(k2, v) — iff k1 ≠ k2
+//! - Get(k1) commutes with Get(k2) -- always (reads are independent)
+//! - Put(k1, v1) commutes with Put(k2, v2) -- iff k1 ≠ k2
+//! - Get(k1) commutes with Put(k2, v) -- iff k1 ≠ k2
 //!
 //! The test also includes a `#[should_panic]` test demonstrating
 //! that an INCORRECT spec (claiming Put(k,v1) commutes with Put(k,v2))

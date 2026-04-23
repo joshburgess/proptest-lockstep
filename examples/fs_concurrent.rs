@@ -2,7 +2,7 @@
 //! Concurrent file system lockstep test with linearizability checking.
 //!
 //! Demonstrates linearizability checking with opaque handles:
-//! - `FileHandle` (real) vs `MockHandle` (model) — different types
+//! - `FileHandle` (real) vs `MockHandle` (model) -- different types
 //! - GVar projections resolve handles from `Result<(Handle, Path), Err>`
 //! - The linearizability checker uses generation-time var IDs to ensure
 //!   correct variable resolution across interleaving candidates
@@ -18,7 +18,7 @@ use proptest::strategy::BoxedStrategy;
 use proptest_lockstep::prelude::*;
 
 // ============================================================================
-// Domain types (duplicated from file_system — examples can't import each other)
+// Domain types (duplicated from file_system -- examples can't import each other)
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -287,7 +287,7 @@ impl LockstepModel for FsLockstep {
 }
 
 // ============================================================================
-// ConcurrentLockstepModel — opt-in for linearizability
+// ConcurrentLockstepModel -- opt-in for linearizability
 // ============================================================================
 
 #[cfg(feature = "concurrent")]

@@ -1,13 +1,13 @@
 //! Formal theory of lockstep testing as observational refinement.
 //!
-//! This module documents the metatheory of proptest-lockstep — what a
+//! This module documents the metatheory of proptest-lockstep -- what a
 //! passing lockstep test *proves* about the relationship between the
 //! SUT and the model. The formal proofs are machine-checked in
 //! Lean 4 (see `formal_verification/`).
 //!
 //! # The Bridge Algebra as a Logical Relation
 //!
-//! The bridge algebra is a *logical relation* (Reynolds, 1983) — a
+//! The bridge algebra is a *logical relation* (Reynolds, 1983) -- a
 //! type-indexed family of relations preserved by type constructors.
 //!
 //! | Bridge | Logical Relation | Lean theorem |
@@ -49,7 +49,7 @@
 //!   with uniform observation functions (identity is finest)
 //! - `refines_refl`, `refines_trans`: preorder structure
 //! - `sum_refines`, `prod_refines`, `option_refines`, `list_refines`:
-//!   lifts are monotone — finer components produce finer composite
+//!   lifts are monotone -- finer components produce finer composite
 //!   bridges
 //! - `refines_strengthen_bisim`: replacing bridges with finer ones
 //!   preserves bounded bisimulation (finer observation = stronger
@@ -91,7 +91,7 @@
 //! ```
 //!
 //! This establishes that the runner's operational bridge checks are
-//! *exactly* the obligations of bounded bisimulation — no more, no
+//! *exactly* the obligations of bounded bisimulation -- no more, no
 //! less. The forward direction (`runner_implies_bounded_bisim`) is the
 //! soundness result: passing tests imply bisimulation. The reverse
 //! direction (`bounded_bisim_implies_runner`) confirms completeness:
@@ -101,7 +101,7 @@
 //!
 //! The central theoretical result: bounded bisimulation implies
 //! observational indistinguishability. The SUT observationally
-//! refines the model — no interaction through the bridge API can
+//! refines the model -- no interaction through the bridge API can
 //! distinguish them within the tested depth.
 //!
 //! Key theorems:
@@ -112,7 +112,7 @@
 //!   closing the circle: runner passes ↔ bounded_bisim ↔
 //!   observational refinement
 //! - `bisim_along_trace`: bisimulation is preserved along any
-//!   prefix — the guarantee doesn't degrade during execution
+//!   prefix -- the guarantee doesn't degrade during execution
 //! - `bisim_observation_after_prefix`: observations remain equal
 //!   at every point along a trace
 //!
@@ -167,7 +167,7 @@
 //! extended to arbitrary positions via `dpor_swap_at`.
 //!
 //! The biconditional `dpor_swap_iff` confirms that commuting
-//! operations are fully interchangeable — neither ordering can
+//! operations are fully interchangeable -- neither ordering can
 //! succeed where the other fails.
 //!
 //! Key theorems:
@@ -180,7 +180,7 @@
 //! Note: the formalization uses direct equality on model results,
 //! which is stronger than the bridge-based comparison used in the
 //! Rust `operations_commute`. This means the formal guarantee is
-//! conservative — it covers all cases the Rust implementation handles.
+//! conservative -- it covers all cases the Rust implementation handles.
 //!
 //! # Opacity and Behavioral Equivalence (proved in `OpaqueDetection.lean`)
 //!
@@ -201,7 +201,7 @@
 //!   follow-up action → `bounded_bisim 2` fails
 //! - `opaque_delayed_detection`: general k-step delayed detection
 //! - `opaque_runner_transparent`: an opaque step in the runner is
-//!   transparent — it passes iff the tail passes on successor states
+//!   transparent -- it passes iff the tail passes on successor states
 //! - `opaque_depth_sensitivity`: depth 1 can pass while depth 2
 //!   fails, proving deeper testing is strictly necessary for opaque
 //!   handles
@@ -249,7 +249,7 @@
 //! Key theorems:
 //! - `compositional_bisim`: product bisim from component bisims
 //! - `product_bisim_left/right`: extract component bisims from product
-//! - `product_bisim_iff`: biconditional — product bisim iff both
+//! - `product_bisim_iff`: biconditional -- product bisim iff both
 //!   components satisfy bisim
 //!
 //! # Effect-Indexed Commutativity Lattice (proved in `EffectLattice.lean`)
@@ -273,7 +273,7 @@
 //! `RefinementGuard` shadows the SUT with a model, checking bridge
 //! equivalence at every operation. Violations are collected (not
 //! panicked on), enabling use as a production monitor. Based on
-//! `observational_refinement_equiv` — the contract is exactly right.
+//! `observational_refinement_equiv` -- the contract is exactly right.
 //!
 //! # Model-Coverage-Guided Generation (`src/coverage.rs`)
 //!
@@ -377,7 +377,7 @@
 //!
 //! Implements FNV-1a hashing in Lean and proves the hash values
 //! match the constants in the Rust `BridgeCertificate`. This closes
-//! the Rust-Lean certificate gap — hashes are verified on both sides.
+//! the Rust-Lean certificate gap -- hashes are verified on both sides.
 //!
 //! Key theorems:
 //! - `transparent_hash_verified`: Lean hash = `0xd0e945b97c0c46d1`
@@ -387,7 +387,7 @@
 //!
 //! # Projection Chains (proved in `Projection.lean`)
 //!
-//! Formalizes the `Op` DSL — typed projection chains for decomposing
+//! Formalizes the `Op` DSL -- typed projection chains for decomposing
 //! compound return types. Projections are partial functions composing
 //! via Kleisli composition (`Option` monad).
 //!
@@ -397,7 +397,7 @@
 //! - `proj_fst/snd/ok/err/some_preserves`: each projection preserves
 //!   bridge_equiv when applied to bridge-equivalent sources
 //! - `proj_comp_preserves`: composed projections preserve bridge_equiv
-//!   (the fundamental GVar theorem — justifies `GVar::new(v, OpOk).then(OpFst)`)
+//!   (the fundamental GVar theorem -- justifies `GVar::new(v, OpOk).then(OpFst)`)
 //!
 //! # Scope and Limitations of the Formalization
 //!
@@ -437,7 +437,7 @@
 //! - **Sampling vs exhaustive**: Lean's `runner_passes` quantifies
 //!   over ALL traces of length n. The Rust runner SAMPLES traces via
 //!   proptest strategies. A passing Rust test does not check all
-//!   traces — it provides probabilistic (not absolute) coverage.
+//!   traces -- it provides probabilistic (not absolute) coverage.
 //! - **DecidableEq vs PartialEq**: Lean requires `DecidableEq` on
 //!   `Observed` types. Rust requires `PartialEq`, which is weaker
 //!   (not necessarily decidable, may have side effects).

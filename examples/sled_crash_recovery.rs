@@ -1,8 +1,8 @@
 #![allow(dead_code)]
-//! sled crash-recovery test — testing a real embedded database.
+//! sled crash-recovery test -- testing a real embedded database.
 //!
-//! Tests `sled` — a high-performance embedded database written in Rust
-//! — with crash-recovery semantics. sled uses a write-ahead log and
+//! Tests `sled` -- a high-performance embedded database written in Rust
+//! -- with crash-recovery semantics. sled uses a write-ahead log and
 //! periodic compaction for durability.
 //!
 //! This is the case study the reviewers specifically requested:
@@ -22,7 +22,7 @@ use proptest_lockstep::invariant::InvariantModel;
 use proptest_lockstep::crash_recovery::{CrashRecoveryModel, CrashRecoveryConfig};
 
 // ============================================================================
-// sled wrapper — manages temp directory for each test
+// sled wrapper -- manages temp directory for each test
 // ============================================================================
 
 /// Wraps a sled::Db with its temp directory so cleanup happens on drop.
@@ -115,7 +115,7 @@ fn rand_id() -> u64 {
 }
 
 // ============================================================================
-// Model — BTreeMap (ordered like sled)
+// Model -- BTreeMap (ordered like sled)
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -150,7 +150,7 @@ pub mod db {
     #[action(real_return = "usize")]
     pub struct Len;
 
-    // Explicit flush — ensures durability
+    // Explicit flush -- ensures durability
     #[action(real_return = "()")]
     pub struct Flush;
 }

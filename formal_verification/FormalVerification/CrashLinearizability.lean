@@ -85,7 +85,7 @@ theorem commute_recovery_order (sys : CrashRecoverySystem)
   **Crash deferral theorem**: if `crash_bisim` holds at sufficient
   depth, two operations commute at the model level, and the
   checkpoint is transparent, then inserting a crash AFTER both
-  operations preserves crash bisimulation — meaning a crash
+  operations preserves crash bisimulation -- meaning a crash
   between the operations can be equivalently deferred to after both.
 
   Concretely: if `crash_bisim (n+3) sm ss` holds, then:
@@ -164,7 +164,7 @@ theorem crash_bisim_implies_linearizable (sys : CrashRecoverySystem)
 
   This is the real deferral theorem: the crash point can be moved
   past a checkpoint-transparent action without changing the outcome.
-  It uses `checkpoint_transparent` non-trivially — the durable state
+  It uses `checkpoint_transparent` non-trivially -- the durable state
   must be the same regardless of whether action `a` has executed.
 
   Combined with `crash_bisim`, this means: if crash_bisim holds and
@@ -183,7 +183,7 @@ theorem crash_action_swap_model (sys : CrashRecoverySystem)
   **Crash deferral with checkpoint transparency**: if an action `a`
   doesn't change the durable state (`checkpoint` is the same before
   and after `a`), then crashing after `a` is equivalent to crashing
-  before `a` — the recovered model state is identical.
+  before `a` -- the recovered model state is identical.
 
   This is the non-trivial part that `crash_deferral` was missing:
   it actually USES checkpoint transparency to prove that the crash

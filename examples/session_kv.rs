@@ -17,7 +17,7 @@ use proptest_lockstep::invariant::InvariantModel;
 use proptest_lockstep::session::{SessionConsistencyModel, SessionConsistencyConfig, SessionGuarantee};
 
 // ============================================================================
-// Multi-session KV store — SUT
+// Multi-session KV store -- SUT
 // ============================================================================
 
 /// A KV store where writes are immediately visible (satisfies
@@ -43,7 +43,7 @@ struct KvModel {
 }
 
 // ============================================================================
-// Actions — tagged with session ID
+// Actions -- tagged with session ID
 // ============================================================================
 
 #[proptest_lockstep::lockstep_actions(state = KvModel)]

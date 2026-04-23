@@ -3,7 +3,7 @@
 //!
 //! Tests a bounded MPMC (multi-producer multi-consumer) channel against
 //! a sequential `VecDeque` model with capacity. This is a common real-world
-//! concurrency primitive — bounded channels are used in actor systems,
+//! concurrency primitive -- bounded channels are used in actor systems,
 //! work-stealing schedulers, and pipeline architectures.
 //!
 //! Demonstrates:
@@ -28,7 +28,7 @@ use proptest::strategy::BoxedStrategy;
 use proptest_lockstep::prelude::*;
 
 // ============================================================================
-// Bounded Channel — real concurrent data structure
+// Bounded Channel -- real concurrent data structure
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -94,7 +94,7 @@ impl<T> std::fmt::Debug for BoundedChannel<T> {
 }
 
 // ============================================================================
-// Model — sequential bounded queue
+// Model -- sequential bounded queue
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -138,7 +138,7 @@ impl ChannelModel {
 }
 
 // ============================================================================
-// Actions — with auto-derived bridges
+// Actions -- with auto-derived bridges
 // ============================================================================
 
 #[proptest_lockstep::lockstep_actions(state = ChannelModel)]

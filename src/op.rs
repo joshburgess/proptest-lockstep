@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 /// A projection from type `A` to type `B`.
 ///
 /// This is a small DSL for decomposing compound return types. Each
-/// implementor is a zero-sized type — the entire projection chain compiles
+/// implementor is a zero-sized type -- the entire projection chain compiles
 /// down to nothing at runtime.
 ///
 /// Returns `Option<B>` because the projection may fail at runtime (e.g.,

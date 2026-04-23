@@ -19,7 +19,7 @@ use proptest_lockstep::prelude::*;
 use proptest_lockstep::coverage::{CoverageGuidedModel, CoverageConfig};
 
 // ============================================================================
-// Bounded counter — SUT
+// Bounded counter -- SUT
 // ============================================================================
 
 /// A counter with a maximum value. Increment saturates at max.

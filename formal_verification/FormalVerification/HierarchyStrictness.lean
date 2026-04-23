@@ -92,7 +92,7 @@ theorem convergent_strictly_weaker :
   The SUT always returns `false` on reads (stale data), but the sync
   functions trivially agree (`model_sync = sut_sync = fun _ => ()`).
 
-  This means the system is eventually consistent — sync always matches —
+  This means the system is eventually consistent -- sync always matches --
   but violates read-your-writes: a session that writes `true` at a key
   and then reads it back gets `false`.
 
@@ -181,7 +181,7 @@ theorem ryw_violation_convergent :
   The action sequence write-then-read violates read-your-writes:
   1. Write action records `true` at key `()` in session `()`'s history
   2. Read action observes `false` from the SUT
-  3. `read_your_writes` requires `false = true` — contradiction.
+  3. `read_your_writes` requires `false = true` -- contradiction.
 -/
 theorem ryw_violation_not_session :
     ¬ session_bisim ryw_violation_session 2 false false

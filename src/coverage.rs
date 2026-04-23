@@ -17,7 +17,7 @@
 //! # Architecture
 //!
 //! Users implement [`CoverageGuidedModel`] on top of [`LockstepModel`]:
-//! - `coverage_key` — hash the model state into a coverage bucket
+//! - `coverage_key` -- hash the model state into a coverage bucket
 //!
 //! The runner generates N candidate actions, forward-simulates each
 //! through the model (cheap: pure clone), and selects the one that

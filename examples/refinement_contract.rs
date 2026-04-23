@@ -7,9 +7,9 @@
 //! panicked on), enabling use as a production monitor.
 //!
 //! Three scenarios:
-//! 1. Correct SUT — no violations
-//! 2. Buggy SUT — violations detected and reported
-//! 3. Gradual tightening — start with Opaque (permissive), tighten
+//! 1. Correct SUT -- no violations
+//! 2. Buggy SUT -- violations detected and reported
+//! 3. Gradual tightening -- start with Opaque (permissive), tighten
 //!    to Transparent (strict)
 //!
 //! Run with: `cargo test --example refinement_contract`
@@ -24,7 +24,7 @@ use proptest_lockstep::contracts::{
 };
 
 // ============================================================================
-// KV Store — correct implementation
+// KV Store -- correct implementation
 // ============================================================================
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ impl CorrectKv {
 }
 
 // ============================================================================
-// KV Store — buggy implementation (sometimes returns wrong value)
+// KV Store -- buggy implementation (sometimes returns wrong value)
 // ============================================================================
 
 #[derive(Debug)]
@@ -99,7 +99,7 @@ impl kv::KvModelInterp for KvLockstep {
     }
 }
 
-// SUT interpreter — uses CorrectKv by default
+// SUT interpreter -- uses CorrectKv by default
 impl kv::KvSutInterp for KvLockstep {
     type Sut = CorrectKv;
     fn put(s: &mut CorrectKv, a: &kv::Put, _: &TypedEnv) -> Option<String> {
@@ -134,7 +134,7 @@ fn main() {
 mod tests {
     use super::*;
 
-    /// Scenario 1: Correct SUT — no violations.
+    /// Scenario 1: Correct SUT -- no violations.
     /// The refinement guard shadows the correct KV store and
     /// confirms all operations match the model.
     #[test]
@@ -166,7 +166,7 @@ mod tests {
         assert_eq!(perf.operations_skipped, 0);
     }
 
-    /// Scenario 2: Buggy SUT — violations detected.
+    /// Scenario 2: Buggy SUT -- violations detected.
     /// The buggy KV store sometimes returns None for existing keys.
     /// The guard detects this without crashing.
     #[test]
@@ -183,7 +183,7 @@ mod tests {
             guard.check(action.as_ref(), &*result);
         }
 
-        // Now get — the buggy SUT returns None for existing keys
+        // Now get -- the buggy SUT returns None for existing keys
         // when data.len() % 5 == 0
         let get = kv::get(kv::Get { key: "k0".into() });
         let result: Box<dyn Any> = Box::new(sut.get("k0"));
@@ -248,7 +248,7 @@ mod tests {
         let result2: Box<dyn Any> = Box::new(sut.get("k1"));
         guard.check(get2.as_ref(), &*result2);
 
-        // Still only 1 violation — the second check was skipped
+        // Still only 1 violation -- the second check was skipped
         assert_eq!(guard.violation_count(), 1);
         assert!(guard.performance().operations_skipped > 0);
     }

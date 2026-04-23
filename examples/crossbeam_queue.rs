@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-//! Crossbeam queue lockstep test — testing a real crate from crates.io.
+//! Crossbeam queue lockstep test -- testing a real crate from crates.io.
 //!
 //! Tests `crossbeam_queue::ArrayQueue` (bounded lock-free MPMC queue)
 //! and `crossbeam_queue::SegQueue` (unbounded lock-free MPMC queue)
@@ -23,7 +23,7 @@ use proptest::strategy::BoxedStrategy;
 use proptest_lockstep::prelude::*;
 
 // ============================================================================
-// ArrayQueue — bounded lock-free MPMC queue
+// ArrayQueue -- bounded lock-free MPMC queue
 // ============================================================================
 
 // Model for ArrayQueue: bounded VecDeque
@@ -81,14 +81,14 @@ impl ArrayQueueModel {
 // Actions for ArrayQueue
 #[proptest_lockstep::lockstep_actions(state = ArrayQueueModel)]
 pub mod aq {
-    // push returns Result<(), T> — Ok if enqueued, Err(value) if full.
+    // push returns Result<(), T> -- Ok if enqueued, Err(value) if full.
     // Bridge: ResultBridge<UnitBridge, Transparent<i32>>
     #[action(real_return = "Result<(), i32>")]
     pub struct Push {
         pub value: i32,
     }
 
-    // force_push returns Option<T> — Some(evicted) if queue was full.
+    // force_push returns Option<T> -- Some(evicted) if queue was full.
     // Bridge: OptionBridge<Transparent<i32>>
     #[action(real_return = "Option<i32>")]
     pub struct ForcePush {
@@ -213,7 +213,7 @@ impl proptest_lockstep::concurrent::ConcurrentLockstepModel for ArrayQueueLockst
 }
 
 // ============================================================================
-// SegQueue — unbounded lock-free MPMC queue
+// SegQueue -- unbounded lock-free MPMC queue
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]

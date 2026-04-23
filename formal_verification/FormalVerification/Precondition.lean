@@ -31,7 +31,7 @@ structure PreconditionedSystem extends LockstepSystem where
 
 /--
   Bounded bisimulation restricted to actions satisfying preconditions.
-  Only actions where `precond a sm` holds are checked — this matches
+  Only actions where `precond a sm` holds are checked -- this matches
   the runner's behavior, which filters actions through
   `LockstepModel::precondition` before executing them.
 -/
@@ -204,7 +204,7 @@ def precond_trace_valid (psys : PreconditionedSystem) :
 
   This is the reverse direction of `precond_runner_implies_bisim`.
   The precondition-validity requirement is necessary because
-  `precond_runner_passes` includes precondition checks — a trace
+  `precond_runner_passes` includes precondition checks -- a trace
   where preconditions don't hold would trivially fail the runner
   regardless of bisimulation.
 -/

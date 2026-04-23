@@ -16,7 +16,7 @@
 //! approach at the cost of slower execution.
 //!
 //! The `concurrent` (Shuttle) and `concurrent-loom` (loom) features are
-//! independent — each provides its own entry points and they can coexist.
+//! independent -- each provides its own entry points and they can coexist.
 //!
 //! Requires `concurrent` and/or `concurrent-loom` feature flags.
 
@@ -39,7 +39,7 @@ use crate::model::LockstepModel;
 /// implementing this trait.
 ///
 /// For models where all `real_return` types are `Send` (the common case),
-/// implement this by delegating to the generated `dispatch_sut` — the
+/// implement this by delegating to the generated `dispatch_sut` -- the
 /// proc macro generates `dispatch_sut_send` which returns `Box<dyn Any + Send>`.
 ///
 /// # Example
@@ -77,7 +77,7 @@ pub enum SplitStrategy {
     /// The same seed always produces the same split, ensuring reproducibility.
     Random { seed: u64 },
     /// Model-guided split: assigns actions to branches to maximize
-    /// contention — operations that don't commute (according to the
+    /// contention -- operations that don't commute (according to the
     /// model) are placed on different branches so that Shuttle's
     /// random scheduler is more likely to interleave them.
     ///
@@ -88,7 +88,7 @@ pub enum SplitStrategy {
     /// **Approximation:** commutativity is checked against the
     /// post-prefix model state, not the state after earlier branch
     /// assignments. For models where commutativity is state-dependent,
-    /// this may produce suboptimal (but never incorrect) splits —
+    /// this may produce suboptimal (but never incorrect) splits --
     /// the linearizability checker remains sound regardless of split.
     ///
     /// Usable with all concurrent entry points (crash-absence and
@@ -258,7 +258,7 @@ where
                             var_id,
                         );
                         if !commutes {
-                            // This branch conflicts — we want to put the
+                            // This branch conflicts -- we want to put the
                             // action on a DIFFERENT branch for interleaving
                             found_conflict = true;
                         }
@@ -285,7 +285,7 @@ where
                         best_bid = (0..count).min_by_key(|&b| branches[b].len()).unwrap();
                     }
                 } else {
-                    // No conflicts — smallest branch
+                    // No conflicts -- smallest branch
                     best_bid = (0..count).min_by_key(|&b| branches[b].len()).unwrap();
                 }
 
@@ -395,7 +395,7 @@ pub fn run_prefix<M: LockstepModel>(
 /// Run a concurrent lockstep test using Shuttle's randomized scheduler.
 ///
 /// Tests crash-absence: verifies the SUT doesn't panic or deadlock
-/// under concurrent access. Does NOT check linearizability — for that,
+/// under concurrent access. Does NOT check linearizability -- for that,
 /// use [`lockstep_linearizable`].
 ///
 /// # Example
@@ -552,7 +552,7 @@ pub struct OpRecord {
 ///
 /// Two operations commute if executing them in either order produces
 /// the same observable results (via their bridges) AND the same final
-/// model state. This is computed dynamically using the model — no
+/// model state. This is computed dynamically using the model -- no
 /// annotations needed.
 ///
 /// The check uses `check_bridge` to compare return values and
@@ -560,7 +560,7 @@ pub struct OpRecord {
 /// asymmetric observation functions, the bridge comparison passes two
 /// model results (not a model/SUT pair), which is correct for all
 /// built-in bridges but may be imprecise for custom asymmetric bridges.
-/// The model state comparison via `PartialEq` is sound — it catches
+/// The model state comparison via `PartialEq` is sound -- it catches
 /// all state differences, including "silent" mutations that don't
 /// appear in return values.
 ///
@@ -611,7 +611,7 @@ where
 /// Uses dynamic partial-order reduction (DPOR): at each search node,
 /// detects commuting operations via the model and skips redundant
 /// interleavings. Two operations that commute in the current model
-/// state don't need to be reordered — the checker prunes the search
+/// state don't need to be reordered -- the checker prunes the search
 /// tree using sleep sets.
 ///
 /// Falls back to brute-force enumeration when operations don't commute
@@ -716,7 +716,7 @@ fn check_linearizability_rec<M: LockstepModel>(
 where
     M::ModelState: PartialEq,
 {
-    // Base case: all operations consumed — this is a valid linearization
+    // Base case: all operations consumed -- this is a valid linearization
     if depth == total {
         *attempts += 1;
         return true;
@@ -931,7 +931,7 @@ where
                 .skip(config.prefix_len)
                 .collect();
 
-            // Execute prefix first — needed for ConflictMaximizing
+            // Execute prefix first -- needed for ConflictMaximizing
             // which requires the post-prefix model state.
             let (model_state, sut, model_env, sut_env) = run_prefix::<M>(&prefix_actions);
 
@@ -1026,12 +1026,12 @@ where
 }
 
 // ---------------------------------------------------------------------------
-// Loom support — exhaustive schedule enumeration
+// Loom support -- exhaustive schedule enumeration
 // ---------------------------------------------------------------------------
 
 /// Configuration for loom-based concurrent tests.
 ///
-/// Unlike [`ConcurrentConfig`], there is no `iterations` field — loom
+/// Unlike [`ConcurrentConfig`], there is no `iterations` field -- loom
 /// explores all possible schedules exhaustively.
 #[derive(Debug, Clone)]
 pub struct LoomConfig {
@@ -1054,7 +1054,7 @@ pub struct LoomConfig {
 impl Default for LoomConfig {
     fn default() -> Self {
         // Smaller defaults than ConcurrentConfig because loom explores
-        // all schedules exhaustively — larger sizes cause combinatorial
+        // all schedules exhaustively -- larger sizes cause combinatorial
         // explosion in the number of schedules.
         LoomConfig {
             prefix_len: 3,
@@ -1110,7 +1110,7 @@ where
     use proptest::strategy::ValueTree;
     use proptest::test_runner::TestRunner;
 
-    // Generate actions OUTSIDE loom::model — they must be deterministic
+    // Generate actions OUTSIDE loom::model -- they must be deterministic
     // across loom's replays (loom re-executes the closure for each schedule).
     let mut runner = TestRunner::default();
 
@@ -1164,7 +1164,7 @@ where
     let check_final = std::sync::Arc::new(check_final);
 
     loom::model(move || {
-        // Execute prefix sequentially — no threads spawned yet, so no
+        // Execute prefix sequentially -- no threads spawned yet, so no
         // loom instrumentation needed. Mutex::new() establishes
         // happens-before for all prefix writes.
         let (_model_state, sut, _model_env, sut_env) = run_prefix::<M>(&prefix_actions);
@@ -1293,7 +1293,7 @@ where
     let dpor_enabled = config.dpor_enabled;
 
     loom::model(move || {
-        // Execute prefix sequentially — no threads spawned yet, so no
+        // Execute prefix sequentially -- no threads spawned yet, so no
         // loom instrumentation needed. Mutex::new() establishes
         // happens-before for all prefix writes.
         let (model_state, sut, model_env, sut_env) = run_prefix::<M>(&prefix_actions);
@@ -1587,14 +1587,14 @@ mod tests {
         let env = TypedEnv::new();
         // Use FailingAction so no interleaving matches, and budget
         // will be the reason it stops. But since bridges fail, it stops
-        // at depth 0 with 0 attempts — budget isn't the issue.
+        // at depth 0 with 0 attempts -- budget isn't the issue.
         // Instead, test with matching actions but tiny budget that
         // gets exhausted before completing.
         // Actually, with MockAction (always matches), the FIRST
         // interleaving succeeds, so budget is never hit. We need
         // a scenario where many interleavings fail before one succeeds.
         // For unit testing budget behavior, just use FailingAction
-        // with a budget > total interleavings — it exhausts all
+        // with a budget > total interleavings -- it exhausts all
         // interleavings and then reports no match (not budget).
         // The budget-fail path triggers when budget < total interleavings
         // and no match is found before the budget. Let's simulate that
@@ -1695,7 +1695,7 @@ mod tests {
 
     #[test]
     fn commute_disjoint_keys() {
-        // Put("x", "1") and Put("y", "2") touch different keys — they commute
+        // Put("x", "1") and Put("y", "2") touch different keys -- they commute
         let model = KvMockModel::init_model();
         let env = TypedEnv::new();
         let a = OpRecord {
@@ -1713,7 +1713,7 @@ mod tests {
 
     #[test]
     fn no_commute_same_key() {
-        // Put("x", "1") and Put("x", "2") touch the same key — don't commute
+        // Put("x", "1") and Put("x", "2") touch the same key -- don't commute
         // because final state differs: {x: "2"} vs {x: "1"}
         let model = KvMockModel::init_model();
         let env = TypedEnv::new();
@@ -1732,7 +1732,7 @@ mod tests {
 
     #[test]
     fn commute_get_different_key() {
-        // Get("y") and Put("x", "1") touch different keys — they commute
+        // Get("y") and Put("x", "1") touch different keys -- they commute
         let model = KvMockModel::init_model();
         let env = TypedEnv::new();
         let a = OpRecord {
@@ -1750,7 +1750,7 @@ mod tests {
 
     #[test]
     fn no_commute_get_same_key_as_put() {
-        // Get("x") and Put("x", "1") — Get returns None vs Some("1")
+        // Get("x") and Put("x", "1") -- Get returns None vs Some("1")
         // depending on order, so they don't commute
         let model = KvMockModel::init_model();
         let env = TypedEnv::new();
@@ -1769,7 +1769,7 @@ mod tests {
 
     #[test]
     fn commute_two_gets() {
-        // Get("x") and Get("y") are both reads — always commute
+        // Get("x") and Get("y") are both reads -- always commute
         let model = KvMockModel::init_model();
         let env = TypedEnv::new();
         let a = OpRecord {
@@ -1787,7 +1787,7 @@ mod tests {
 
     #[test]
     fn commute_two_gets_same_key() {
-        // Get("x") and Get("x") — both read same key, still commute
+        // Get("x") and Get("x") -- both read same key, still commute
         let model = KvMockModel::init_model();
         let env = TypedEnv::new();
         let a = OpRecord {
@@ -1847,7 +1847,7 @@ mod tests {
 
     #[test]
     fn conflict_maximizing_separates_conflicting_ops() {
-        // Put("x","1") and Put("x","2") conflict — they should end up
+        // Put("x","1") and Put("x","2") conflict -- they should end up
         // on different branches.
         let actions: Vec<(Box<dyn AnyAction>, usize)> = vec![
             (Box::new(PutAction { key: "x".into(), value: "1".into() }), 0),
@@ -1876,7 +1876,7 @@ mod tests {
 
     #[test]
     fn dpor_vs_brute_force_both_find_linearization() {
-        // Two branches with disjoint keys — both DPOR and brute-force
+        // Two branches with disjoint keys -- both DPOR and brute-force
         // should find a valid linearization. DPOR finds it on the first
         // try (all operations commute), same as brute-force.
         let model = KvMockModel::init_model();

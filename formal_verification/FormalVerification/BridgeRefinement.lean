@@ -9,7 +9,7 @@
     observation functions): it requires equality of observations.
   - Opaque is the coarsest bridge: it relates everything.
 
-  The lifts (sum, product, option, list) are monotone — they
+  The lifts (sum, product, option, list) are monotone -- they
   preserve the refinement ordering. This means that replacing a
   component bridge with a finer one produces a finer composite
   bridge, which gives strictly stronger guarantees.

@@ -1,7 +1,7 @@
 /-
   Projection Chains (GVar/Op Formalization)
 
-  Formalizes the `Op` DSL — the projection language for decomposing
+  Formalizes the `Op` DSL -- the projection language for decomposing
   compound return types. Each projection is a partial function from
   a source type to a target type. Projections compose via Kleisli
   composition (the `Option` monad).
@@ -25,7 +25,7 @@ import FormalVerification.Bridge
 
 /--
   A projection from type A to type B. Projections are partial
-  functions — they return `Option B` because some projections
+  functions -- they return `Option B` because some projections
   can fail (e.g., extracting `Ok` from an `Err` value).
 
   This mirrors the Rust `Op<A, B>` trait.

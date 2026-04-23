@@ -16,7 +16,7 @@ use proptest::strategy::BoxedStrategy;
 use proptest_lockstep::prelude::*;
 
 // ============================================================================
-// System under test (duplicated from kv_store — examples can't import each other)
+// System under test (duplicated from kv_store -- examples can't import each other)
 // ============================================================================
 
 #[derive(Debug)]
@@ -123,7 +123,7 @@ impl LockstepModel for KvLockstep {
 }
 
 // ============================================================================
-// ConcurrentLockstepModel — opt-in for linearizability checking
+// ConcurrentLockstepModel -- opt-in for linearizability checking
 // ============================================================================
 
 #[cfg(feature = "concurrent")]

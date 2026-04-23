@@ -7,7 +7,7 @@
   abstracts over the implementation details, modeling the environment
   as an opaque state that is extended after each step.
 
-  The key result: `env_runner_bounded_bisim_equiv` — the runner
+  The key result: `env_runner_bounded_bisim_equiv` -- the runner
   correspondence theorem still holds when the environment is
   modeled explicitly. This closes the gap identified by reviewers:
   the formal guarantee now covers environment-threaded execution.

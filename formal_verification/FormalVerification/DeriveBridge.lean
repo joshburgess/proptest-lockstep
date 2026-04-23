@@ -120,7 +120,7 @@ theorem different_atoms_derive_opaque (rn mn : String) (h : rn ≠ mn) :
 /--
   **Successful derivations decompose into certified parts.**
   Every leaf of a successful derivation is `.transparent`, `.opaque`,
-  or `.unitBridge` — each with a certified constructor. Every
+  or `.unitBridge` -- each with a certified constructor. Every
   combinator (`.sum`, `.prod`, `.option`, `.list`) has a certified
   combinator. Therefore the entire derivation is certifiable.
 -/

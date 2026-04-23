@@ -246,7 +246,7 @@ mod tests {
         assert!(!comp.is_sound()); // logger invalidated by precision upgrade
 
         // Re-test Logger at the new precision
-        // Counter's result is REUSED — not re-tested
+        // Counter's result is REUSED -- not re-tested
         comp.retest_right::<LogLockstep>(1..15);
         assert!(comp.is_sound()); // sound again at finer precision
 
@@ -255,10 +255,10 @@ mod tests {
         assert_eq!(result.right_tests_run, 2);   // logger re-tested
         assert_eq!(result.right_precision, BridgePrecision::Transparent);
 
-        // Phase 3: downgrade Logger back to Mixed — previous Transparent
+        // Phase 3: downgrade Logger back to Mixed -- previous Transparent
         // result covers Mixed (finer → coarser is free by refines_strengthen_bisim)
         comp.set_right_precision(BridgePrecision::Mixed);
-        assert!(comp.is_sound()); // still sound — no re-test needed!
+        assert!(comp.is_sound()); // still sound -- no re-test needed!
         assert_eq!(comp.result().right_tests_run, 2); // still 2, not 3
 
         // Phase 4: invalidate counter (simulate implementation change)

@@ -4,8 +4,8 @@
 //! converge: after all operations complete (quiescence), every
 //! replica or view agrees on the final state.
 //!
-//! This is weaker than linearizability — individual operations may
-//! return stale results — but stronger than no guarantee at all.
+//! This is weaker than linearizability -- individual operations may
+//! return stale results -- but stronger than no guarantee at all.
 //! The framework checks convergence by running operations through
 //! the model and SUT, allowing per-step mismatches, but requiring
 //! that a final "sync" operation produces matching observations.
@@ -25,9 +25,9 @@
 //!
 //! Users implement [`EventualConsistencyModel`] on top of
 //! [`InvariantModel`](crate::invariant::InvariantModel):
-//! - `sync` — force the SUT to a consistent state (flush, merge, etc.)
-//! - `model_sync` — the model's equivalent sync operation
-//! - `convergence_check` — compare model and SUT after sync
+//! - `sync` -- force the SUT to a consistent state (flush, merge, etc.)
+//! - `model_sync` -- the model's equivalent sync operation
+//! - `convergence_check` -- compare model and SUT after sync
 
 use std::fmt::Debug;
 
@@ -151,7 +151,7 @@ pub fn run_eventual_consistency_test<M: EventualConsistencyModel>(
                 &model_env,
             );
 
-            // Run SUT — no bridge check! (eventual consistency allows mismatches)
+            // Run SUT -- no bridge check! (eventual consistency allows mismatches)
             let sut_result = M::step_sut(
                 &mut sut,
                 transition.as_ref(),

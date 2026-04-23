@@ -190,7 +190,7 @@ theorem session_bisim_zero (sys : SessionSystem)
   session guarantee: if the bridge passes for action `a` (i.e.,
   `bridge_equiv` holds), then the read_your_writes check also
   passes for that action's session. This conditioning on
-  `bridge_equiv` is the natural weakening — it says that
+  `bridge_equiv` is the natural weakening -- it says that
   bridge-compatible results satisfy RYW, which is a local
   property of the bridge and session semantics.
 
@@ -232,7 +232,7 @@ theorem bounded_implies_session (sys : SessionSystem)
 
   Note: unlike environment-free bisimulations, the histories evolve
   at each step. Monotonicity holds because the depth-n check is a
-  prefix of the depth-m check — the first n steps are identical.
+  prefix of the depth-m check -- the first n steps are identical.
 -/
 theorem session_bisim_mono (sys : SessionSystem)
     [DecidableEq sys.Session] [DecidableEq sys.Key] :
@@ -276,7 +276,7 @@ theorem session_bisim_step (sys : SessionSystem)
   **Session → convergent connection**: session bisim's successor
   structure (∀ action, bisim at depth n on successors) is the same
   structure that convergent bisim requires. The only additional
-  requirement for convergent bisim is sync agreement — which is
+  requirement for convergent bisim is sync agreement -- which is
   a separate property of the system.
 
   This theorem extracts the successor-structure part: if session
@@ -394,7 +394,7 @@ theorem cross_session_lookup {S K O : Type} [DecidableEq S]
   session `s₁` is independent of history updates at session `s₂ ≠ s₁`.
 
   If another session modifies the history, it doesn't affect the
-  RYW check for this session — because the `if s' = s₂` guard
+  RYW check for this session -- because the `if s' = s₂` guard
   routes to `hists s₁` (unchanged) when `s₁ ≠ s₂`.
 -/
 theorem cross_session_ryw_independent {S K O : Type}

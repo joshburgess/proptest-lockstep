@@ -8,7 +8,7 @@
 
   The key notion is `convergent_bisim`: like bounded_bisim but without
   per-step bridge_equiv. Instead, only requires convergence at sync
-  points — the observable state matches after synchronization.
+  points -- the observable state matches after synchronization.
 
   This is the first formally verified eventual consistency PBT
   framework. It fills the gap between CRDT verification (full proofs
@@ -152,7 +152,7 @@ theorem convergent_bisim_mono (sys : EventualSystem) :
   bisimulation.
 
   This means linearizable systems are automatically eventually
-  consistent — linearizability is strictly stronger.
+  consistent -- linearizability is strictly stronger.
 -/
 theorem bounded_implies_convergent (sys : EventualSystem)
     (n : Nat) (sm : sys.SM) (ss : sys.SS)

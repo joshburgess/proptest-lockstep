@@ -2,7 +2,7 @@
 
 Lockstep-style stateful property testing for Rust, with **182 machine-checked theorems** in Lean 4.
 
-A reimagination of Haskell's [`quickcheck-lockstep`](https://hackage.haskell.org/package/quickcheck-lockstep) (Edsko de Vries, Well-Typed) using Rust's type system — GATs, type equality witnesses, and composable trait algebras.
+A reimagination of Haskell's [`quickcheck-lockstep`](https://hackage.haskell.org/package/quickcheck-lockstep) (Edsko de Vries, Well-Typed) using Rust's type system -- GATs, type equality witnesses, and composable trait algebras.
 
 ## What is lockstep testing?
 
@@ -19,7 +19,7 @@ proptest = "1"
 ```rust
 #[proptest_lockstep::lockstep_actions(state = MyModel)]
 pub mod actions {
-    // Bridges auto-derived from return types — no manual bridge annotations!
+    // Bridges auto-derived from return types -- no manual bridge annotations!
     #[action(real_return = "Option<String>")]
     pub struct Get { pub key: String }
 
@@ -38,9 +38,9 @@ pub mod actions {
 
 ## Core Features
 
-**Composable bridge algebra.** Bridges describe observability — how to compare real and model outputs. They compose: `ResultBridge<TupleBridge<Opaque<Handle, MockHandle>, Transparent<String>>, Transparent<Err>>`. This is a novel contribution not present in the Haskell original.
+**Composable bridge algebra.** Bridges describe observability -- how to compare real and model outputs. They compose: `ResultBridge<TupleBridge<Opaque<Handle, MockHandle>, Transparent<String>>, Transparent<Err>>`. This is a novel contribution not present in the Haskell original.
 
-**Polynomial bridge derivation.** Bridges are auto-derived from return types. Just declare `real_return`, `model_return`, and `opaque_types` — the proc macro derives the bridge automatically.
+**Polynomial bridge derivation.** Bridges are auto-derived from return types. Just declare `real_return`, `model_return`, and `opaque_types` -- the proc macro derives the bridge automatically.
 
 **Certified bridge synthesis.** Every built-in bridge type is linked to a machine-checked Lean proof of correctness via the `CertifiedLockstepBridge` trait.
 
@@ -48,7 +48,7 @@ pub mod actions {
 
 **Phase distinction via GATs.** `SymVar<T>` during generation, concrete values during execution. The compiler enforces the boundary.
 
-**Typed projection chains.** `GVar::new(var, OpOk).then(OpFst)` extracts a handle from `Result<(Handle, Path), Err>` — compile-time verified, zero runtime cost.
+**Typed projection chains.** `GVar::new(var, OpOk).then(OpFst)` extracts a handle from `Result<(Handle, Path), Err>` -- compile-time verified, zero runtime cost.
 
 ## Consistency Hierarchy
 
@@ -83,13 +83,13 @@ Linearizability (strongest)
 
 Three levels of concurrent verification, all powered by [Shuttle](https://github.com/awslabs/shuttle):
 
-- **Crash-absence** — verifies no panics/deadlocks under randomized schedules
-- **Linearizability** — verifies concurrent results match some sequential model ordering
-- **Exhaustive enumeration** — explores all thread schedules via [loom](https://github.com/tokio-rs/loom)
+- **Crash-absence** -- verifies no panics/deadlocks under randomized schedules
+- **Linearizability** -- verifies concurrent results match some sequential model ordering
+- **Exhaustive enumeration** -- explores all thread schedules via [loom](https://github.com/tokio-rs/loom)
 
 **DPOR (Dynamic Partial-Order Reduction)** automatically prunes redundant interleavings. The model serves as the commutativity oracle.
 
-**ConflictMaximizing scheduling** distributes operations to maximize contention — the model guides the split semantically.
+**ConflictMaximizing scheduling** distributes operations to maximize contention -- the model guides the split semantically.
 
 ## Formal Verification
 

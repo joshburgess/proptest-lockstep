@@ -31,7 +31,7 @@ use proptest_lockstep::invariant::InvariantModel;
 use proptest_lockstep::eventual::{EventualConsistencyModel, EventualConsistencyConfig};
 
 // ============================================================================
-// G-Counter CRDT — SUT
+// G-Counter CRDT -- SUT
 // ============================================================================
 
 /// A G-Counter (grow-only counter) CRDT.
@@ -48,7 +48,7 @@ use proptest_lockstep::eventual::{EventualConsistencyModel, EventualConsistencyC
 struct GCounter {
     /// Per-node counts. Key is node ID, value is that node's count.
     counts: HashMap<u8, u64>,
-    /// Each node's "view" — what it last saw from others.
+    /// Each node's "view" -- what it last saw from others.
     /// Initially each node only sees its own count.
     views: HashMap<u8, HashMap<u8, u64>>,
 }
@@ -105,7 +105,7 @@ impl GCounter {
 }
 
 // ============================================================================
-// Model — sequential counter (always up-to-date)
+// Model -- sequential counter (always up-to-date)
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]

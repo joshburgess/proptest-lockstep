@@ -39,7 +39,7 @@ struct KvModel {
 }
 
 // ============================================================================
-// Actions — model_return omitted (defaults to real_return)
+// Actions -- model_return omitted (defaults to real_return)
 // ============================================================================
 
 #[proptest_lockstep::lockstep_actions(state = KvModel)]
@@ -58,7 +58,7 @@ pub mod kv {
 }
 
 // ============================================================================
-// Interpreters — typed, no downcasting, no Box<dyn Any>
+// Interpreters -- typed, no downcasting, no Box<dyn Any>
 // ============================================================================
 
 #[derive(Debug, Clone)]
@@ -81,7 +81,7 @@ impl kv::KvSutInterp for KvLockstep {
 }
 
 // ============================================================================
-// LockstepModel — just wiring
+// LockstepModel -- just wiring
 // ============================================================================
 
 impl LockstepModel for KvLockstep {

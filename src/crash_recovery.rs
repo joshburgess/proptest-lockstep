@@ -8,18 +8,18 @@
 //! This is the first formally verified crash-recovery property-based
 //! testing framework. The soundness is proved in `CrashRecovery.lean`:
 //! if the crash-recovery runner passes, the system satisfies crash
-//! bisimulation — a strengthening of bounded bisimulation that
+//! bisimulation -- a strengthening of bounded bisimulation that
 //! accounts for crash transitions.
 //!
 //! # Architecture
 //!
 //! Users implement [`CrashRecoveryModel`] on top of
 //! [`InvariantModel`](crate::invariant::InvariantModel):
-//! - `DurableState` — what survives a crash (e.g., on-disk data)
-//! - `model_checkpoint` — extract the durable part of the model state
-//! - `model_recover` — reconstruct model state from a checkpoint
-//! - `sut_recover` — reconstruct the SUT from its persisted state
-//! - `invariant` — per-step state predicate (inherited from InvariantModel)
+//! - `DurableState` -- what survives a crash (e.g., on-disk data)
+//! - `model_checkpoint` -- extract the durable part of the model state
+//! - `model_recover` -- reconstruct model state from a checkpoint
+//! - `sut_recover` -- reconstruct the SUT from its persisted state
+//! - `invariant` -- per-step state predicate (inherited from InvariantModel)
 //!
 //! The runner ([`run_crash_recovery_test`]) executes a normal lockstep
 //! test but probabilistically injects crashes between steps. After

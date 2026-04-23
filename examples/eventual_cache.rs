@@ -3,8 +3,8 @@
 //!
 //! Tests a write-through cache that buffers writes and may serve
 //! stale reads until a `sync` operation flushes pending writes.
-//! This is intentionally NOT linearizable — reads can return stale
-//! data — but it IS eventually consistent: after sync, the cache
+//! This is intentionally NOT linearizable -- reads can return stale
+//! data -- but it IS eventually consistent: after sync, the cache
 //! matches the model.
 //!
 //! Run with: `cargo test --example eventual_cache`
@@ -20,7 +20,7 @@ use proptest_lockstep::invariant::InvariantModel;
 use proptest_lockstep::eventual::{EventualConsistencyModel, EventualConsistencyConfig};
 
 // ============================================================================
-// Eventually-consistent cache — SUT
+// Eventually-consistent cache -- SUT
 // ============================================================================
 
 /// A cache that buffers writes. Reads may return stale data until
@@ -47,7 +47,7 @@ impl LazyCache {
     }
 
     fn read(&self, key: &str) -> Option<String> {
-        // Reads from store only — pending writes are invisible!
+        // Reads from store only -- pending writes are invisible!
         self.store.get(key).cloned()
     }
 
@@ -69,7 +69,7 @@ impl LazyCache {
 }
 
 // ============================================================================
-// Model — sequential store (always up-to-date)
+// Model -- sequential store (always up-to-date)
 // ============================================================================
 
 #[derive(Debug, Clone, PartialEq)]
@@ -97,7 +97,7 @@ pub mod cache {
         pub value: String,
     }
 
-    // Read may return stale data from the SUT — that's expected!
+    // Read may return stale data from the SUT -- that's expected!
     // We still track it for the lockstep framework, but the
     // eventual consistency runner doesn't check per-step bridges.
     #[action(real_return = "Option<String>")]
@@ -213,7 +213,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "Lockstep mismatch")]
     fn standard_lockstep_fails_on_stale_reads() {
-        // Standard lockstep catches the "stale read" as a bug —
+        // Standard lockstep catches the "stale read" as a bug --
         // but for an eventually-consistent system, this is expected.
         proptest_lockstep::runner::run_lockstep_test::<CacheLockstep>(1..30);
     }
