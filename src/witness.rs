@@ -75,16 +75,6 @@ impl<A, B> Is<A, B> {
         Is(PhantomData)
     }
 
-    /// Lift into a type constructor: if `A == B`, then `F<A> == F<B>`
-    /// for any `F`. Since Rust lacks HKT, callers use this where they
-    /// can prove the relationship holds.
-    ///
-    /// Restricted to `pub(crate)` because the caller must guarantee that
-    /// `FA` and `FB` are genuinely `F<A>` and `F<B>` for some `F` --
-    /// Rust's type system cannot enforce this.
-    pub(crate) fn lift<FA, FB>(self) -> Is<FA, FB> {
-        Is(PhantomData)
-    }
 }
 
 #[cfg(test)]

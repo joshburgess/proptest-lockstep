@@ -45,7 +45,7 @@ Initial release.
 
 ### Formal Verification
 
-- 182 machine-checked Lean 4 theorems across 20 files, zero `sorry`
+- 236 machine-checked Lean 4 theorems across 34 files, zero `sorry`
 - Theoretical chain: `runner passes ↔ bounded_bisim ↔ observational refinement`
 - DPOR soundness, linearizability, opaque handle detection, testing completeness
 - Bridge algebra: decidability, refinement ordering, monotone lifts, derived bridge preservation

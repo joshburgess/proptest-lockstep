@@ -8,7 +8,6 @@
 //! Requires the `async` feature flag: `proptest-lockstep = { features = ["async"] }`.
 
 use std::any::Any;
-use std::fmt::Debug;
 
 use crate::action::AnyAction;
 use crate::env::TypedEnv;

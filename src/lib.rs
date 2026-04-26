@@ -1,6 +1,6 @@
 //! # proptest-lockstep
 //!
-//! Lockstep-style stateful property testing for Rust with 248
+//! Lockstep-style stateful property testing for Rust with 236
 //! machine-checked Lean 4 theorems.
 //!
 //! ## Quick Example

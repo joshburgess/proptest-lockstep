@@ -1,6 +1,6 @@
 # proptest-lockstep
 
-Lockstep-style stateful property testing for Rust, with **182 machine-checked theorems** in Lean 4.
+Lockstep-style stateful property testing for Rust, with **236 machine-checked theorems** in Lean 4.
 
 A reimagination of Haskell's [`quickcheck-lockstep`](https://hackage.haskell.org/package/quickcheck-lockstep) (Edsko de Vries, Well-Typed) using Rust's type system: GATs, type equality witnesses, and composable trait algebras.
 
@@ -93,7 +93,7 @@ Three levels of concurrent verification, all powered by [Shuttle](https://github
 
 ## Formal Verification
 
-**20 Lean 4 files, 182 definitions/theorems, zero `sorry`.**
+**34 Lean 4 files, 236 theorems, zero `sorry`.**
 
 The formalization proves the complete theoretical chain:
 
@@ -141,7 +141,7 @@ Criterion benchmarks measuring DPOR pruning effectiveness, commutativity check c
 | Phase distinction | HKT | GATs |
 | Shrinking | Manual | **Integrated + bisimulation-guided** |
 | Concurrent testing | None | **Shuttle + loom + DPOR + ConflictMaximizing** |
-| Formal verification | None | **182 Lean 4 theorems** |
+| Formal verification | None | **236 Lean 4 theorems** |
 | Crash-recovery | None | **Random crash injection with recovery verification** |
 | Consistency hierarchy | None | **Linearizability → Session → Eventual** |
 | Runtime contracts | None | **Shadow monitoring via bridges** |
