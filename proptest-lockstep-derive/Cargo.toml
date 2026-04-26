@@ -5,6 +5,7 @@ edition = "2021"
 rust-version = "1.65"
 description = "Proc macros for proptest-lockstep"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/joshburgess/proptest-lockstep"
 
 [lib]
 proc-macro = true
