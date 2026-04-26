@@ -3,7 +3,7 @@ members = [".", "proptest-lockstep-derive"]
 
 [package]
 name = "proptest-lockstep"
-version = "0.3.0"
+version = "0.1.0"
 edition = "2021"
 rust-version = "1.65"
 description = "Lockstep-style stateful property testing for Rust"
@@ -21,7 +21,7 @@ shuttle = { version = "0.8", optional = true }
 loom = { version = "0.7", optional = true }
 async-trait = { version = "0.1", optional = true }
 
-proptest-lockstep-derive = { version = "0.3.0", path = "proptest-lockstep-derive", optional = true }
+proptest-lockstep-derive = { version = "0.1.0", path = "proptest-lockstep-derive", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -50,3 +50,11 @@ derive = ["dep:proptest-lockstep-derive"]
 concurrent = ["shuttle"]
 concurrent-loom = ["loom"]
 async = ["async-trait"]
+
+# `concurrent` and `concurrent-loom` are mutually exclusive: they instrument
+# `std::sync` in incompatible ways, and the loom entry points need stricter
+# `Sync` bounds than the shuttle path provides. Pick one per build.
+
+[package.metadata.docs.rs]
+features = ["derive", "concurrent", "async"]
+rustdoc-args = ["--cfg", "docsrs"]

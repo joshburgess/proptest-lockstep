@@ -75,6 +75,13 @@
 //! run_lockstep_test::<KvTest>(1..10);
 //! ```
 
+#[cfg(all(feature = "concurrent", feature = "concurrent-loom"))]
+compile_error!(
+    "features `concurrent` (Shuttle) and `concurrent-loom` (loom) are \
+     mutually exclusive: they instrument `std::sync` in incompatible ways. \
+     Enable one per build."
+);
+
 pub mod action;
 pub mod bridge;
 pub mod env;

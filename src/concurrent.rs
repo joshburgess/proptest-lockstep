@@ -16,9 +16,10 @@
 //! approach at the cost of slower execution.
 //!
 //! The `concurrent` (Shuttle) and `concurrent-loom` (loom) features are
-//! independent -- each provides its own entry points and they can coexist.
+//! mutually exclusive: they instrument `std::sync` in incompatible ways,
+//! so a build picks one or the other. Each provides its own entry points.
 //!
-//! Requires `concurrent` and/or `concurrent-loom` feature flags.
+//! Requires the `concurrent` or `concurrent-loom` feature flag.
 
 use std::any::Any;
 use std::fmt::Debug;
