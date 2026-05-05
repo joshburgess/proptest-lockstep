@@ -97,16 +97,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache elan + Lean toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.elan
+          key: ${{ runner.os }}-elan-${{ hashFiles('metatheory/lean-toolchain') }}
+
       - name: Install elan
         run: |
           curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> $GITHUB_PATH
 
-      - name: Build Lean formalization
-        run: cd formal_verification && lake build
+      - name: Cache Lake build artifacts
+        uses: actions/cache@v4
+        with:
+          path: metatheory/.lake
+          key: ${{ runner.os }}-lake-${{ hashFiles('metatheory/lean-toolchain', 'metatheory/lakefile.toml', 'metatheory/Metatheory.lean', 'metatheory/Metatheory/**/*.lean') }}
+          restore-keys: |
+            ${{ runner.os }}-lake-
+
+      - name: Build Lean metatheory
+        run: cd metatheory && lake build
 
       - name: Verify zero sorry
         run: |
-          count=$(grep -r 'sorry' formal_verification/FormalVerification/*.lean | wc -l)
+          count=$(grep -r 'sorry' metatheory/Metatheory/*.lean | wc -l)
           echo "Sorry count: $count"
           [ "$count" -eq 0 ] || (echo "SORRY FOUND!" && exit 1)

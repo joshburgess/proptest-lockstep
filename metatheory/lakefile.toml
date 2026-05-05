@@ -1,0 +1,6 @@
+name = "metatheory"
+version = "0.1.0"
+defaultTargets = ["Metatheory"]
+
+[[lean_lib]]
+name = "Metatheory"

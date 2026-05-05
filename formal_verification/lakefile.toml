@@ -1,6 +1,0 @@
-name = "formal_verification"
-version = "0.1.0"
-defaultTargets = ["FormalVerification"]
-
-[[lean_lib]]
-name = "FormalVerification"

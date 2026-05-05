@@ -125,7 +125,7 @@ impl<T: Debug + Clone + PartialEq + 'static> CertifiedLockstepBridge
     fn certificate() -> BridgeCertificate {
         BridgeCertificate {
             theorem: "certified_transparent_sound",
-            lean_file: "FormalVerification/CertifiedSynthesis.lean",
+            lean_file: "Metatheory/CertifiedSynthesis.lean",
             construction: "transparent T",
             structural_hash: fnv1a_hash(b"Transparent"),
         }
@@ -136,7 +136,7 @@ impl<R: 'static, M: 'static> CertifiedLockstepBridge for crate::bridge::Opaque<R
     fn certificate() -> BridgeCertificate {
         BridgeCertificate {
             theorem: "certified_opaque_sound",
-            lean_file: "FormalVerification/CertifiedSynthesis.lean",
+            lean_file: "Metatheory/CertifiedSynthesis.lean",
             construction: "opaqueBridge R M",
             structural_hash: fnv1a_hash(b"Opaque"),
         }
@@ -157,7 +157,7 @@ where
     fn certificate() -> BridgeCertificate {
         BridgeCertificate {
             theorem: "certified_sum_ok",
-            lean_file: "FormalVerification/CertifiedSynthesis.lean",
+            lean_file: "Metatheory/CertifiedSynthesis.lean",
             construction: "sumBridge(ok, err)",
             structural_hash: fnv1a_hash(b"ResultBridge")
                 ^ OkB::certificate().structural_hash.rotate_left(7)
@@ -180,7 +180,7 @@ where
     fn certificate() -> BridgeCertificate {
         BridgeCertificate {
             theorem: "certified_prod_sound",
-            lean_file: "FormalVerification/CertifiedSynthesis.lean",
+            lean_file: "Metatheory/CertifiedSynthesis.lean",
             construction: "prodBridge(fst, snd)",
             structural_hash: fnv1a_hash(b"TupleBridge")
                 ^ A::certificate().structural_hash.rotate_left(7)
@@ -199,7 +199,7 @@ where
     fn certificate() -> BridgeCertificate {
         BridgeCertificate {
             theorem: "certified_option_some",
-            lean_file: "FormalVerification/CertifiedSynthesis.lean",
+            lean_file: "Metatheory/CertifiedSynthesis.lean",
             construction: "optionBridge(inner)",
             structural_hash: fnv1a_hash(b"OptionBridge")
                 ^ B::certificate().structural_hash.rotate_left(7),
@@ -217,7 +217,7 @@ where
     fn certificate() -> BridgeCertificate {
         BridgeCertificate {
             theorem: "certified_list_cons",
-            lean_file: "FormalVerification/CertifiedSynthesis.lean",
+            lean_file: "Metatheory/CertifiedSynthesis.lean",
             construction: "listBridge(inner)",
             structural_hash: fnv1a_hash(b"VecBridge")
                 ^ B::certificate().structural_hash.rotate_left(7),
@@ -229,7 +229,7 @@ impl CertifiedLockstepBridge for crate::bridge::UnitBridge {
     fn certificate() -> BridgeCertificate {
         BridgeCertificate {
             theorem: "certified_opaque_sound",
-            lean_file: "FormalVerification/CertifiedSynthesis.lean",
+            lean_file: "Metatheory/CertifiedSynthesis.lean",
             construction: "opaqueBridge Unit Unit",
             structural_hash: fnv1a_hash(b"UnitBridge"),
         }

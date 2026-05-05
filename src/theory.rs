@@ -3,7 +3,7 @@
 //! This module documents the metatheory of proptest-lockstep -- what a
 //! passing lockstep test *proves* about the relationship between the
 //! SUT and the model. The formal proofs are machine-checked in
-//! Lean 4 (see `formal_verification/`).
+//! Lean 4 (see `metatheory/`).
 //!
 //! # The Bridge Algebra as a Logical Relation
 //!
@@ -403,7 +403,7 @@
 //!
 //! ## What IS formalized
 //!
-//! The Lean formalization (303 definitions, 29 files, zero `sorry`)
+//! The Lean formalization (236 theorems, 136 definitions, 34 files, zero `sorry`)
 //! covers: bridge algebra, bounded bisimulation, runner correspondence,
 //! observational refinement, DPOR soundness, linearizability, opaque
 //! handle detection, preconditions, crash-recovery bisimulation,

@@ -23,7 +23,7 @@ mod tests {
     fn transparent_certificate() {
         let cert = verify_certified::<Transparent<String>>();
         assert_eq!(cert.theorem, "certified_transparent_sound");
-        assert_eq!(cert.lean_file, "FormalVerification/CertifiedSynthesis.lean");
+        assert_eq!(cert.lean_file, "Metatheory/CertifiedSynthesis.lean");
         assert!(cert.construction.contains("transparent"));
         assert_ne!(cert.structural_hash, 0);
     }

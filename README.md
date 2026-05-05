@@ -1,6 +1,6 @@
 # proptest-lockstep
 
-Lockstep-style stateful property testing for Rust, with **236 machine-checked theorems** in Lean 4.
+Lockstep-style stateful property testing for Rust, with **236 machine-checked metatheory theorems** in Lean 4.
 
 A reimagination of Haskell's [`quickcheck-lockstep`](https://hackage.haskell.org/package/quickcheck-lockstep) (Edsko de Vries, Well-Typed) using Rust's type system: GATs, type equality witnesses, and composable trait algebras.
 
@@ -91,11 +91,13 @@ Three levels of concurrent verification, all powered by [Shuttle](https://github
 
 **ConflictMaximizing scheduling** distributes operations to maximize contention. The model guides the split semantically.
 
-## Formal Verification
+## Mechanized Metatheory
 
-**34 Lean 4 files, 236 theorems, zero `sorry`.**
+**34 Lean 4 files, 236 theorems, 136 definitions, zero `sorry`.**
 
-The formalization proves the complete theoretical chain:
+The Lean development in `metatheory/` proves properties of an abstract specification of lockstep testing. The Rust implementation is correlated to this specification by design and inspection. See [CORRESPONDENCE.md](CORRESPONDENCE.md) for the theorem-to-Rust mapping and an explicit statement of the trust boundary (this is metatheory verification, not implementation verification, in the same tradition as POPLmark and most ICFP artifact formalizations).
+
+The central chain proved:
 
 ```
 runner passes  ↔  bounded bisimulation  ↔  observational refinement
@@ -103,9 +105,9 @@ runner passes  ↔  bounded bisimulation  ↔  observational refinement
 
 Plus: DPOR soundness, linearizability, opaque handle detection, crash-recovery bisimulation, compositional bisimulation, commutativity spec soundness, effect lattice soundness, convergent bisimulation, session bisimulation, certified bridge synthesis, testing completeness, and bridge refinement ordering.
 
-Build the formalization:
+Build the metatheory:
 ```bash
-cd formal_verification && lake build   # requires Lean 4 / elan
+cd metatheory && lake build   # requires Lean 4 / elan
 ```
 
 ## Examples
@@ -141,7 +143,7 @@ Criterion benchmarks measuring DPOR pruning effectiveness, commutativity check c
 | Phase distinction | HKT | GATs |
 | Shrinking | Manual | **Integrated + bisimulation-guided** |
 | Concurrent testing | None | **Shuttle + loom + DPOR + ConflictMaximizing** |
-| Formal verification | None | **236 Lean 4 theorems** |
+| Mechanized metatheory | None | **236 Lean 4 theorems** |
 | Crash-recovery | None | **Random crash injection with recovery verification** |
 | Consistency hierarchy | None | **Linearizability → Session → Eventual** |
 | Runtime contracts | None | **Shadow monitoring via bridges** |
