@@ -3,7 +3,7 @@ members = [".", "proptest-lockstep-derive"]
 
 [package]
 name = "proptest-lockstep"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.65"
 description = "Lockstep-style stateful property testing for Rust"
