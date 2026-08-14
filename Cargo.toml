@@ -58,3 +58,6 @@ async = ["async-trait"]
 [package.metadata.docs.rs]
 features = ["derive", "concurrent", "async"]
 rustdoc-args = ["--cfg", "docsrs"]
+
+[profile.dev]
+debug = 0
